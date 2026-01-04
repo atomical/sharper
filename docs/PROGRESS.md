@@ -128,3 +128,8 @@ This log is append-only. Every entry includes an ISO-8601 timestamp with timezon
   - Added `SharpDemoAppVision` visionOS target to `Swift/SharpDemoApp/project.yml` and regenerated `Swift/SharpDemoApp/SharpDemoAppUI.xcodeproj` via `xcodegen`.
   - Added `make visionos-build` (fails fast with a clear message if the visionOS Simulator runtime is not installed).
   - Note: on this machine `xcrun simctl list runtimes` shows no visionOS runtimes, so `make visionos-build` will instruct you to install the runtime via Xcode > Settings > Components.
+
+## 2026-01-04T16:17:06-06:00
+- Deferred visionOS support for now:
+  - visionOS remains “best-effort” and is not a gating deliverable for this milestone.
+  - Focus is on macOS + iOS functional parity (`make validate`, `make validate-swift`, `make demo`, `make ios-build`).

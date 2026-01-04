@@ -53,7 +53,7 @@ Notes:
 - Open `Swift/SharpDemoApp/SharpDemoAppUI.xcodeproj` in Xcode.
 - Select a scheme:
   - `SharpDemoAppUI` (iOS)
-  - `SharpDemoAppVision` (visionOS) — requires the visionOS Simulator runtime installed via Xcode > Settings > Components.
+  - `SharpDemoAppVision` (visionOS) — optional / best-effort (currently deferred); requires the visionOS Simulator runtime installed via Xcode > Settings > Components.
 - Run on a simulator/device for the selected platform.
 - In the app UI:
   - Select `artifacts/Sharp.mlpackage` (generate it first via `make coreml`).
