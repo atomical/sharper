@@ -55,3 +55,8 @@ This log is append-only. Every entry includes an ISO-8601 timestamp with timezon
 - Matched `ml-sharp` EXIF auto-rotate behavior in Swift preprocessing:
   - `SharpPreprocessor.loadCGImage` now applies EXIF `Orientation` for values 3/6/8 (rotate 180 / 90 CW / 90 CCW) to match `sharp.utils.io.load_rgb(auto_rotate=True)`.
   - Verified on a synthetic JPEG with EXIF orientation=6: Swift metadata reports `3x4` and disparity factor matches Python.
+
+## 2026-01-04T11:43:40-06:00
+- Upgraded Metal renderer toward true Gaussian splatting:
+  - `PLYLoader` now loads per-Gaussian quaternions (wxyz) and the renderer uses them (anisotropic, view-dependent screen-space covariance).
+  - Implemented weighted blended OIT (accum + revealage) to avoid per-frame depth sorting while producing stable results.

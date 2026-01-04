@@ -15,7 +15,7 @@ public enum VideoExporterError: Error {
     case writerFailed(underlying: Error?)
 }
 
-public final class MP4VideoWriter {
+public final class MP4VideoWriter: @unchecked Sendable {
     private let writer: AVAssetWriter
     private let input: AVAssetWriterInput
     private let adaptor: AVAssetWriterInputPixelBufferAdaptor

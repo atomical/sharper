@@ -58,6 +58,7 @@ public struct PLYLoader {
         guard data.count >= needed else { throw PLYLoadError.unexpectedEOF }
 
         var means = [Float](repeating: 0, count: n * 3)
+        var quaternions = [Float](repeating: 0, count: n * 4)
         var scales = [Float](repeating: 0, count: n * 3)
         var colorsLinear = [Float](repeating: 0, count: n * 3)
         var opacities = [Float](repeating: 0, count: n)
@@ -90,11 +91,19 @@ public struct PLYLoader {
                 let s1 = exp(readF(8))
                 let s2 = exp(readF(9))
 
-                // rot_0..rot_3 at 10..13 (ignored for now)
+                let q0 = readF(10)
+                let q1 = readF(11)
+                let q2 = readF(12)
+                let q3 = readF(13)
 
                 means[i * 3 + 0] = x
                 means[i * 3 + 1] = y
                 means[i * 3 + 2] = z
+
+                quaternions[i * 4 + 0] = q0
+                quaternions[i * 4 + 1] = q1
+                quaternions[i * 4 + 2] = q2
+                quaternions[i * 4 + 3] = q3
 
                 scales[i * 3 + 0] = s0
                 scales[i * 3 + 1] = s1
@@ -113,6 +122,7 @@ public struct PLYLoader {
         }
 
         guard let meansBuf = device.makeBuffer(bytes: means, length: means.count * 4, options: .storageModeShared),
+              let quatBuf = device.makeBuffer(bytes: quaternions, length: quaternions.count * 4, options: .storageModeShared),
               let scalesBuf = device.makeBuffer(bytes: scales, length: scales.count * 4, options: .storageModeShared),
               let colorsBuf = device.makeBuffer(bytes: colorsLinear, length: colorsLinear.count * 4, options: .storageModeShared),
               let opaBuf = device.makeBuffer(bytes: opacities, length: opacities.count * 4, options: .storageModeShared)
@@ -120,7 +130,7 @@ public struct PLYLoader {
             throw PLYLoadError.metalBufferCreateFailed
         }
 
-        return GaussianScene(count: n, means: meansBuf, scales: scalesBuf, colorsLinear: colorsBuf, opacities: opaBuf)
+        return GaussianScene(count: n, means: meansBuf, quaternions: quatBuf, scales: scalesBuf, colorsLinear: colorsBuf, opacities: opaBuf)
     }
 
     private static func sigmoid(_ x: Float) -> Float {
@@ -133,4 +143,3 @@ public struct PLYLoader {
         return pow((x + 0.055) / 1.055, 2.4)
     }
 }
-

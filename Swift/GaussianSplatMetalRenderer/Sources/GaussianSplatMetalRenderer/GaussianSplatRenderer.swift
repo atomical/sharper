@@ -46,7 +46,9 @@ public struct PinholeCamera {
 public final class GaussianSplatRenderer {
     private let device: MTLDevice
     private let commandQueue: MTLCommandQueue
-    private let pipeline: MTLRenderPipelineState
+    private let splatPipeline: MTLRenderPipelineState
+    private let compositePipeline: MTLRenderPipelineState
+    private let sampler: MTLSamplerState
 
     public init(device: MTLDevice? = nil) throws {
         let device = device ?? MTLCreateSystemDefaultDevice()
@@ -63,25 +65,56 @@ public final class GaussianSplatRenderer {
         }
         let source = try String(contentsOf: shaderURL, encoding: .utf8)
         let library = try device.makeLibrary(source: source, options: nil)
-        guard let vfn = library.makeFunction(name: "gaussianVertex"),
-              let ffn = library.makeFunction(name: "gaussianFragment")
+        guard let splatV = library.makeFunction(name: "splatVertex"),
+              let splatF = library.makeFunction(name: "splatFragmentOIT"),
+              let compV = library.makeFunction(name: "compositeVertex"),
+              let compF = library.makeFunction(name: "compositeFragment")
         else {
             throw GaussianSplatRendererError.libraryLoadFailed
         }
 
-        let desc = MTLRenderPipelineDescriptor()
-        desc.vertexFunction = vfn
-        desc.fragmentFunction = ffn
-        desc.colorAttachments[0].pixelFormat = .bgra8Unorm
-        desc.colorAttachments[0].isBlendingEnabled = true
-        desc.colorAttachments[0].rgbBlendOperation = .add
-        desc.colorAttachments[0].alphaBlendOperation = .add
-        desc.colorAttachments[0].sourceRGBBlendFactor = .one
-        desc.colorAttachments[0].destinationRGBBlendFactor = .oneMinusSourceAlpha
-        desc.colorAttachments[0].sourceAlphaBlendFactor = .one
-        desc.colorAttachments[0].destinationAlphaBlendFactor = .oneMinusSourceAlpha
+        // Pass 1: splat into (accum, revealage) buffers (weighted blended OIT).
+        let splatDesc = MTLRenderPipelineDescriptor()
+        splatDesc.vertexFunction = splatV
+        splatDesc.fragmentFunction = splatF
 
-        self.pipeline = try device.makeRenderPipelineState(descriptor: desc)
+        splatDesc.colorAttachments[0].pixelFormat = .rgba16Float
+        splatDesc.colorAttachments[0].isBlendingEnabled = true
+        splatDesc.colorAttachments[0].rgbBlendOperation = .add
+        splatDesc.colorAttachments[0].alphaBlendOperation = .add
+        splatDesc.colorAttachments[0].sourceRGBBlendFactor = .one
+        splatDesc.colorAttachments[0].destinationRGBBlendFactor = .one
+        splatDesc.colorAttachments[0].sourceAlphaBlendFactor = .one
+        splatDesc.colorAttachments[0].destinationAlphaBlendFactor = .one
+
+        splatDesc.colorAttachments[1].pixelFormat = .rgba16Float
+        splatDesc.colorAttachments[1].isBlendingEnabled = true
+        splatDesc.colorAttachments[1].rgbBlendOperation = .add
+        splatDesc.colorAttachments[1].alphaBlendOperation = .add
+        splatDesc.colorAttachments[1].sourceRGBBlendFactor = .zero
+        splatDesc.colorAttachments[1].destinationRGBBlendFactor = .oneMinusSourceAlpha
+        splatDesc.colorAttachments[1].sourceAlphaBlendFactor = .zero
+        splatDesc.colorAttachments[1].destinationAlphaBlendFactor = .oneMinusSourceAlpha
+
+        self.splatPipeline = try device.makeRenderPipelineState(descriptor: splatDesc)
+
+        // Pass 2: composite to BGRA8 for readback.
+        let compDesc = MTLRenderPipelineDescriptor()
+        compDesc.vertexFunction = compV
+        compDesc.fragmentFunction = compF
+        compDesc.colorAttachments[0].pixelFormat = .bgra8Unorm
+        self.compositePipeline = try device.makeRenderPipelineState(descriptor: compDesc)
+
+        let sampDesc = MTLSamplerDescriptor()
+        sampDesc.minFilter = .nearest
+        sampDesc.magFilter = .nearest
+        sampDesc.mipFilter = .notMipmapped
+        sampDesc.sAddressMode = .clampToEdge
+        sampDesc.tAddressMode = .clampToEdge
+        guard let sampler = device.makeSamplerState(descriptor: sampDesc) else {
+            throw GaussianSplatRendererError.pipelineCreateFailed
+        }
+        self.sampler = sampler
     }
 
     private struct CameraParams {
@@ -100,14 +133,36 @@ public final class GaussianSplatRenderer {
         width: Int,
         height: Int
     ) throws -> CGImage {
-        let texDesc = MTLTextureDescriptor.texture2DDescriptor(
+        let accumDesc = MTLTextureDescriptor.texture2DDescriptor(
+            pixelFormat: .rgba16Float,
+            width: width,
+            height: height,
+            mipmapped: false
+        )
+        accumDesc.usage = [.renderTarget, .shaderRead]
+        guard let accumTex = device.makeTexture(descriptor: accumDesc) else {
+            throw GaussianSplatRendererError.textureCreateFailed
+        }
+
+        let revealDesc = MTLTextureDescriptor.texture2DDescriptor(
+            pixelFormat: .rgba16Float,
+            width: width,
+            height: height,
+            mipmapped: false
+        )
+        revealDesc.usage = [.renderTarget, .shaderRead]
+        guard let revealTex = device.makeTexture(descriptor: revealDesc) else {
+            throw GaussianSplatRendererError.textureCreateFailed
+        }
+
+        let outDesc = MTLTextureDescriptor.texture2DDescriptor(
             pixelFormat: .bgra8Unorm,
             width: width,
             height: height,
             mipmapped: false
         )
-        texDesc.usage = [.renderTarget, .shaderRead]
-        guard let texture = device.makeTexture(descriptor: texDesc) else {
+        outDesc.usage = [.renderTarget, .shaderRead]
+        guard let outTex = device.makeTexture(descriptor: outDesc) else {
             throw GaussianSplatRendererError.textureCreateFailed
         }
 
@@ -124,26 +179,55 @@ public final class GaussianSplatRenderer {
             throw GaussianSplatRendererError.renderCommandCreateFailed
         }
 
-        let rp = MTLRenderPassDescriptor()
-        rp.colorAttachments[0].texture = texture
-        rp.colorAttachments[0].loadAction = .clear
-        rp.colorAttachments[0].storeAction = .store
-        rp.colorAttachments[0].clearColor = MTLClearColor(red: 0, green: 0, blue: 0, alpha: 1)
-
-        guard let cmd = commandQueue.makeCommandBuffer(),
-              let enc = cmd.makeRenderCommandEncoder(descriptor: rp)
-        else {
+        guard let cmd = commandQueue.makeCommandBuffer() else {
             throw GaussianSplatRendererError.renderCommandCreateFailed
         }
 
-        enc.setRenderPipelineState(pipeline)
-        enc.setVertexBuffer(camBuf, offset: 0, index: 0)
-        enc.setVertexBuffer(scene.means, offset: 0, index: 1)
-        enc.setVertexBuffer(scene.scales, offset: 0, index: 2)
-        enc.setVertexBuffer(scene.colorsLinear, offset: 0, index: 3)
-        enc.setVertexBuffer(scene.opacities, offset: 0, index: 4)
-        enc.drawPrimitives(type: .triangleStrip, vertexStart: 0, vertexCount: 4, instanceCount: scene.count)
-        enc.endEncoding()
+        // Pass 1: splats -> accum + revealage.
+        do {
+            let rp = MTLRenderPassDescriptor()
+            rp.colorAttachments[0].texture = accumTex
+            rp.colorAttachments[0].loadAction = .clear
+            rp.colorAttachments[0].storeAction = .store
+            rp.colorAttachments[0].clearColor = MTLClearColor(red: 0, green: 0, blue: 0, alpha: 0)
+
+            rp.colorAttachments[1].texture = revealTex
+            rp.colorAttachments[1].loadAction = .clear
+            rp.colorAttachments[1].storeAction = .store
+            rp.colorAttachments[1].clearColor = MTLClearColor(red: 1, green: 1, blue: 1, alpha: 1)
+
+            guard let enc = cmd.makeRenderCommandEncoder(descriptor: rp) else {
+                throw GaussianSplatRendererError.renderCommandCreateFailed
+            }
+            enc.setRenderPipelineState(splatPipeline)
+            enc.setVertexBuffer(camBuf, offset: 0, index: 0)
+            enc.setVertexBuffer(scene.means, offset: 0, index: 1)
+            enc.setVertexBuffer(scene.quaternions, offset: 0, index: 2)
+            enc.setVertexBuffer(scene.scales, offset: 0, index: 3)
+            enc.setVertexBuffer(scene.colorsLinear, offset: 0, index: 4)
+            enc.setVertexBuffer(scene.opacities, offset: 0, index: 5)
+            enc.drawPrimitives(type: .triangleStrip, vertexStart: 0, vertexCount: 4, instanceCount: scene.count)
+            enc.endEncoding()
+        }
+
+        // Pass 2: composite -> BGRA8.
+        do {
+            let rp = MTLRenderPassDescriptor()
+            rp.colorAttachments[0].texture = outTex
+            rp.colorAttachments[0].loadAction = .clear
+            rp.colorAttachments[0].storeAction = .store
+            rp.colorAttachments[0].clearColor = MTLClearColor(red: 0, green: 0, blue: 0, alpha: 1)
+
+            guard let enc = cmd.makeRenderCommandEncoder(descriptor: rp) else {
+                throw GaussianSplatRendererError.renderCommandCreateFailed
+            }
+            enc.setRenderPipelineState(compositePipeline)
+            enc.setFragmentTexture(accumTex, index: 0)
+            enc.setFragmentTexture(revealTex, index: 1)
+            enc.setFragmentSamplerState(sampler, index: 0)
+            enc.drawPrimitives(type: .triangleStrip, vertexStart: 0, vertexCount: 4)
+            enc.endEncoding()
+        }
 
         cmd.commit()
         cmd.waitUntilCompleted()
@@ -151,7 +235,7 @@ public final class GaussianSplatRenderer {
         // Read back BGRA8.
         let bytesPerRow = width * 4
         var bytes = [UInt8](repeating: 0, count: bytesPerRow * height)
-        texture.getBytes(&bytes, bytesPerRow: bytesPerRow, from: MTLRegionMake2D(0, 0, width, height), mipmapLevel: 0)
+        outTex.getBytes(&bytes, bytesPerRow: bytesPerRow, from: MTLRegionMake2D(0, 0, width, height), mipmapLevel: 0)
 
         let colorSpace = CGColorSpaceCreateDeviceRGB()
         let bitmapInfo = CGBitmapInfo.byteOrder32Little.union(.init(rawValue: CGImageAlphaInfo.premultipliedFirst.rawValue))
