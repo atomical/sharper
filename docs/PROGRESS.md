@@ -139,3 +139,9 @@ This log is append-only. Every entry includes an ISO-8601 timestamp with timezon
   - `PLYLoader` now supports reading ml-sharp metadata blocks (intrinsics/image size/etc.) via `loadMLSharpCompatiblePLYWithMetadata(...)`.
   - Fixed PLY parsing to use unaligned loads (`loadUnaligned`) since PLY binary data is not guaranteed to be 4-byte aligned after the ASCII header.
   - Extended `Swift/SharpDemoApp` CLI with a `render` mode: `SharpDemoApp render <scene.ply> <out_dir> ...` (render without CoreML inference).
+
+## 2026-01-04T17:03:49-06:00
+- Shifted focus to macOS (deferred iOS runtime verification/profiling for now):
+  - Added a macOS SwiftUI demo app target `SharpDemoAppMac` to `Swift/SharpDemoApp/SharpDemoAppUI.xcodeproj` (via `Swift/SharpDemoApp/project.yml` + `xcodegen`).
+  - Added `make macos-build` to smoke-build the macOS app with `xcodebuild`.
+  - Fixed `Swift/SharpDemoApp/App/SceneDelegate.swift` to compile cross-platform (`UIKit` only when available).

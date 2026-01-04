@@ -31,6 +31,26 @@ targets:
     info:
       path: App/Info.plist
 
+  SharpDemoAppMac:
+    type: application
+    platform: macOS
+    deploymentTarget: "13.0"
+    sources:
+      - path: App
+    dependencies:
+      - package: SharpCoreML
+      - package: GaussianSplatMetalRenderer
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.openai.sharper.SharpDemoAppMac
+        MARKETING_VERSION: "1.0"
+        CURRENT_PROJECT_VERSION: "1"
+        CODE_SIGNING_ALLOWED: NO
+        CODE_SIGNING_REQUIRED: NO
+        CODE_SIGN_IDENTITY: ""
+    info:
+      path: App/Info.plist
+
   SharpDemoAppVision:
     type: application
     platform: visionOS

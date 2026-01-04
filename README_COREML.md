@@ -44,6 +44,7 @@ Notes:
 - `make validate-fp16`: best-effort parity report for FP16 model (expected to diverge from FP32 ref)
 - `make validate-swift`: parity suite (Swift `scene.ply` vs PyTorch reference)
 - `make demo`: Swift demo CLI (image → PLY → frames + mp4)
+- `make macos-build`: build the macOS SwiftUI demo app (Xcode required)
 - `make ios-build`: build the iOS SwiftUI demo app (Xcode required)
 - `make visionos-build`: build the visionOS SwiftUI demo app (Xcode required)
 - `make bench`: benchmarks (writes `artifacts/benches/bench_coreml.json` + `artifacts/benches/bench_swift.json`)
@@ -53,10 +54,11 @@ Notes:
 - Predict (image → `scene.ply` and optional render): `cd Swift/SharpDemoApp && swift run -c release SharpDemoApp predict ../../artifacts/fixtures/inputs/indoor_teaser.jpg ../../artifacts/fixtures/coreml/demo --frames 60 --video ../../artifacts/fixtures/coreml/demo/out.mp4`
 - Render-only (PLY → frames/video): `cd Swift/SharpDemoApp && swift run -c release SharpDemoApp render ../../artifacts/fixtures/coreml/demo/scene.ply ../../artifacts/fixtures/coreml/render_only --frames 60 --video ../../artifacts/fixtures/coreml/render_only/out.mp4`
 
-## iOS / visionOS Demo App
+## GUI Demo App (macOS/iOS/visionOS)
 
 - Open `Swift/SharpDemoApp/SharpDemoAppUI.xcodeproj` in Xcode.
 - Select a scheme:
+  - `SharpDemoAppMac` (macOS)
   - `SharpDemoAppUI` (iOS)
   - `SharpDemoAppVision` (visionOS) — optional / best-effort (currently deferred); requires the visionOS Simulator runtime installed via Xcode > Settings > Components.
 - Run on a simulator/device for the selected platform.

@@ -11,17 +11,23 @@
 		1668E4EB6E805942B75D5666 /* GaussianSplatMetalRenderer in Frameworks */ = {isa = PBXBuildFile; productRef = 57BE77FF3226884A8476B889 /* GaussianSplatMetalRenderer */; };
 		2BF314CA7353D39BFFDB6FDF /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 058ECA609E04A2A83F486D86 /* ContentView.swift */; };
 		4C0421FD033F3F90B6A826AA /* SceneDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E9C51D6C09FF5C695FF82E5 /* SceneDelegate.swift */; };
+		8F05D7C69A51B07F9051DC43 /* SceneDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E9C51D6C09FF5C695FF82E5 /* SceneDelegate.swift */; };
+		901B72C28BD89FDAF41C73EB /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 058ECA609E04A2A83F486D86 /* ContentView.swift */; };
 		98CBB5BD66AD700492CCACBC /* SharpDemoAppUIApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = E660D1D42BAAFB2AC02FE96A /* SharpDemoAppUIApp.swift */; };
+		9A19C6CB7D666B2FCCF5A84C /* SharpCoreML in Frameworks */ = {isa = PBXBuildFile; productRef = B7A492DC2CDB8443BFED2471 /* SharpCoreML */; };
 		A77ECAC77C2CD57118DFA5BB /* SharpDemoAppUIApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = E660D1D42BAAFB2AC02FE96A /* SharpDemoAppUIApp.swift */; };
 		AA63CC89FA414EDDFBAB44EB /* SharpCoreML in Frameworks */ = {isa = PBXBuildFile; productRef = B7DD143C608E215876677DAE /* SharpCoreML */; };
 		BCEFE8A287CA8624AE03C56D /* SceneDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E9C51D6C09FF5C695FF82E5 /* SceneDelegate.swift */; };
 		D75D19A2D39C82FDCBB4F5A2 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 058ECA609E04A2A83F486D86 /* ContentView.swift */; };
+		DDFAA8B0DACDBD1E30B4B76B /* SharpDemoAppUIApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = E660D1D42BAAFB2AC02FE96A /* SharpDemoAppUIApp.swift */; };
+		E8037D0F45E8CFC42CCAF679 /* GaussianSplatMetalRenderer in Frameworks */ = {isa = PBXBuildFile; productRef = 9CD60B2C8DDABC1EB6DEB788 /* GaussianSplatMetalRenderer */; };
 		F7BDBFCABAF825CCD747DA8A /* GaussianSplatMetalRenderer in Frameworks */ = {isa = PBXBuildFile; productRef = 6AA391516FB7D6DC9510A2AD /* GaussianSplatMetalRenderer */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
 		058ECA609E04A2A83F486D86 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		21734A1327774AEE3FCF3BCF /* GaussianSplatMetalRenderer */ = {isa = PBXFileReference; lastKnownFileType = folder; name = GaussianSplatMetalRenderer; path = ../GaussianSplatMetalRenderer; sourceTree = SOURCE_ROOT; };
+		351FD6F5C67AFE2C3DB185E8 /* SharpDemoAppMac.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = SharpDemoAppMac.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		358710C85B842F271BD791EF /* SharpCoreML */ = {isa = PBXFileReference; lastKnownFileType = folder; name = SharpCoreML; path = ../SharpCoreML; sourceTree = SOURCE_ROOT; };
 		4F2CB671433B4CB87B53F26B /* SharpDemoAppUI.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = SharpDemoAppUI.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		6E9C51D6C09FF5C695FF82E5 /* SceneDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SceneDelegate.swift; sourceTree = "<group>"; };
@@ -37,6 +43,15 @@
 			files = (
 				08093752F7E1FBA22EF16537 /* SharpCoreML in Frameworks */,
 				1668E4EB6E805942B75D5666 /* GaussianSplatMetalRenderer in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		800731BC8218001DAFADE40E /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				9A19C6CB7D666B2FCCF5A84C /* SharpCoreML in Frameworks */,
+				E8037D0F45E8CFC42CCAF679 /* GaussianSplatMetalRenderer in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -75,6 +90,7 @@
 		742B0B7E063B6E2B54A9F48D /* Products */ = {
 			isa = PBXGroup;
 			children = (
+				351FD6F5C67AFE2C3DB185E8 /* SharpDemoAppMac.app */,
 				4F2CB671433B4CB87B53F26B /* SharpDemoAppUI.app */,
 				C7DE9ADEFFDC2B5201FED957 /* SharpDemoAppVision.app */,
 			);
@@ -133,6 +149,26 @@
 			productReference = 4F2CB671433B4CB87B53F26B /* SharpDemoAppUI.app */;
 			productType = "com.apple.product-type.application";
 		};
+		D28EF771202C0C72F50A824F /* SharpDemoAppMac */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = C101EAEDB681D9C3C34BA093 /* Build configuration list for PBXNativeTarget "SharpDemoAppMac" */;
+			buildPhases = (
+				2BA2F14B6A6AB4C6962771DE /* Sources */,
+				800731BC8218001DAFADE40E /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = SharpDemoAppMac;
+			packageProductDependencies = (
+				B7A492DC2CDB8443BFED2471 /* SharpCoreML */,
+				9CD60B2C8DDABC1EB6DEB788 /* GaussianSplatMetalRenderer */,
+			);
+			productName = SharpDemoAppMac;
+			productReference = 351FD6F5C67AFE2C3DB185E8 /* SharpDemoAppMac.app */;
+			productType = "com.apple.product-type.application";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -160,6 +196,7 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
+				D28EF771202C0C72F50A824F /* SharpDemoAppMac */,
 				607DDD92601EA960FA1CA289 /* SharpDemoAppUI */,
 				4AD39CE7B500201AE09A5A76 /* SharpDemoAppVision */,
 			);
@@ -167,6 +204,16 @@
 /* End PBXProject section */
 
 /* Begin PBXSourcesBuildPhase section */
+		2BA2F14B6A6AB4C6962771DE /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				901B72C28BD89FDAF41C73EB /* ContentView.swift in Sources */,
+				8F05D7C69A51B07F9051DC43 /* SceneDelegate.swift in Sources */,
+				DDFAA8B0DACDBD1E30B4B76B /* SharpDemoAppUIApp.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		73A4B5171ECE125A9E2F61CE /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -326,6 +373,27 @@
 			};
 			name = Release;
 		};
+		3D6C543B1DE701716B099F65 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGNING_ALLOWED = NO;
+				CODE_SIGNING_REQUIRED = NO;
+				CODE_SIGN_IDENTITY = "";
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				INFOPLIST_FILE = App/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 13.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.openai.sharper.SharpDemoAppMac;
+				SDKROOT = macosx;
+			};
+			name = Debug;
+		};
 		53717C1EF1C354F6BA5D60C3 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -389,6 +457,27 @@
 			};
 			name = Debug;
 		};
+		EA4EA2658B789526768CF38E /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGNING_ALLOWED = NO;
+				CODE_SIGNING_REQUIRED = NO;
+				CODE_SIGN_IDENTITY = "";
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				INFOPLIST_FILE = App/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 13.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.openai.sharper.SharpDemoAppMac;
+				SDKROOT = macosx;
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -419,6 +508,15 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Debug;
 		};
+		C101EAEDB681D9C3C34BA093 /* Build configuration list for PBXNativeTarget "SharpDemoAppMac" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				3D6C543B1DE701716B099F65 /* Debug */,
+				EA4EA2658B789526768CF38E /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
 /* End XCConfigurationList section */
 
 /* Begin XCLocalSwiftPackageReference section */
@@ -444,6 +542,14 @@
 		6AA391516FB7D6DC9510A2AD /* GaussianSplatMetalRenderer */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = GaussianSplatMetalRenderer;
+		};
+		9CD60B2C8DDABC1EB6DEB788 /* GaussianSplatMetalRenderer */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = GaussianSplatMetalRenderer;
+		};
+		B7A492DC2CDB8443BFED2471 /* SharpCoreML */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = SharpCoreML;
 		};
 		B7DD143C608E215876677DAE /* SharpCoreML */ = {
 			isa = XCSwiftPackageProductDependency;

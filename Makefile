@@ -1,6 +1,6 @@
 SHELL := /bin/bash
 
-.PHONY: help venv fixtures ref export coreml coreml-fp16 validate validate-fp16 validate-swift demo ios-build visionos-build bench clean
+.PHONY: help venv fixtures ref export coreml coreml-fp16 validate validate-fp16 validate-swift demo macos-build ios-build visionos-build bench clean
 .PHONY: ml-sharp
 
 PYTHON ?= python3.11
@@ -27,6 +27,7 @@ help:
 	@echo "  validate-fp16 - parity tests: PyTorch vs CoreML (FP16)"
 	@echo "  validate-swift - parity tests: Swift PLY vs ref"
 	@echo "  demo      - build/run Swift demo (image→PLY→frames/video)"
+	@echo "  macos-build - build macOS SwiftUI demo app"
 	@echo "  ios-build - build iOS SwiftUI demo app"
 	@echo "  visionos-build - build visionOS SwiftUI demo app"
 	@echo "  bench     - run CoreML benchmark harness"
@@ -100,7 +101,11 @@ demo: coreml fixtures
 
 IOS_PROJECT := Swift/SharpDemoApp/SharpDemoAppUI.xcodeproj
 IOS_SCHEME := SharpDemoAppUI
+MACOS_SCHEME := SharpDemoAppMac
 VISIONOS_SCHEME := SharpDemoAppVision
+
+macos-build:
+	xcodebuild -project "$(IOS_PROJECT)" -scheme "$(MACOS_SCHEME)" -destination "generic/platform=macOS" -configuration Debug build
 
 ios-build:
 	xcodebuild -project "$(IOS_PROJECT)" -scheme "$(IOS_SCHEME)" -destination "generic/platform=iOS Simulator" -configuration Debug build
