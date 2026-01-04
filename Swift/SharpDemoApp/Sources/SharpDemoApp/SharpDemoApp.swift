@@ -120,6 +120,7 @@ struct SharpDemoApp {
 
             let runner = try timed("Init runner") { try SharpCoreMLRunner(modelURL: modelURL) }
             let prediction = try timed("Predict") { try runner.predict(imageURL: imageURL) }
+            log("Metadata: \(prediction.metadata.imageWidth)x\(prediction.metadata.imageHeight) f_px=\(String(format: "%.2f", prediction.metadata.focalLengthPx)) disparity=\(String(format: "%.6f", prediction.metadata.disparityFactor))")
 
             let plyURL = outURL.appendingPathComponent("scene.ply")
             try timed("Write PLY") { try SharpPLYWriter.write(prediction: prediction, to: plyURL) }

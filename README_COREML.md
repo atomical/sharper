@@ -40,7 +40,7 @@ Notes:
 - `make export`: export a CoreML-friendly Torch graph (WIP)
 - `make coreml`: convert exported graph → `artifacts/Sharp.mlpackage` (WIP)
 - `make validate`: parity suite (PyTorch vs CoreML) (WIP)
-- `make demo`: Swift demo app (WIP)
+- `make demo`: Swift demo CLI (image → PLY → frames + mp4)
 - `make bench`: benchmarks (WIP)
 
 ## Key Docs
@@ -54,4 +54,3 @@ Notes:
 
 - If `make venv` fails with missing `python3.11`: install via Homebrew and retry.
 - If model download is slow/unreliable: rerun `make ref` (torch will resume or reuse cache once complete).
-

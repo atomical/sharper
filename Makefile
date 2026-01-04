@@ -23,7 +23,7 @@ help:
 	@echo "  export    - export/trace SHARP wrapper for CoreML"
 	@echo "  coreml    - convert exported graph to CoreML .mlpackage"
 	@echo "  validate  - parity tests: PyTorch vs CoreML"
-	@echo "  demo      - build/run Swift demo (prints instructions)"
+	@echo "  demo      - build/run Swift demo (image→PLY→frames/video)"
 	@echo "  bench     - run CoreML benchmark harness"
 
 $(VENV_PY):
@@ -60,8 +60,26 @@ coreml: venv
 validate: venv
 	$(VENV_PY) tools/coreml/validate_coreml.py --fixtures artifacts/fixtures/inputs --ref-root artifacts/fixtures/ref --coreml-root artifacts/fixtures/coreml
 
-demo:
-	@echo "Open the Xcode workspace/project under Swift/SharpDemoApp and build/run."
+SWIFT_DEMO_DIR := Swift/SharpDemoApp
+SWIFT_DEMO_BIN := $(SWIFT_DEMO_DIR)/.build/release/SharpDemoApp
+TIMEOUT_BIN := $(shell command -v timeout 2>/dev/null || command -v gtimeout 2>/dev/null || true)
+
+DEMO_IMAGE ?= artifacts/fixtures/inputs/indoor_teaser.jpg
+DEMO_OUT ?= artifacts/fixtures/coreml/demo
+DEMO_FRAMES ?= 60
+DEMO_SIZE ?= 512x512
+DEMO_FPS ?= 30
+DEMO_TIMEOUT ?= 300s
+
+demo: coreml fixtures
+	cd $(SWIFT_DEMO_DIR) && swift build -c release
+	mkdir -p $(DEMO_OUT)
+	@if [ -n "$(TIMEOUT_BIN)" ]; then \
+		cd $(SWIFT_DEMO_DIR) && $(TIMEOUT_BIN) $(DEMO_TIMEOUT) .build/release/SharpDemoApp ../../$(DEMO_IMAGE) ../../$(DEMO_OUT) --frames $(DEMO_FRAMES) --size $(DEMO_SIZE) --video ../../$(DEMO_OUT)/out.mp4 --fps $(DEMO_FPS); \
+	else \
+		echo "warning: timeout not found; running demo without a watchdog"; \
+		cd $(SWIFT_DEMO_DIR) && .build/release/SharpDemoApp ../../$(DEMO_IMAGE) ../../$(DEMO_OUT) --frames $(DEMO_FRAMES) --size $(DEMO_SIZE) --video ../../$(DEMO_OUT)/out.mp4 --fps $(DEMO_FPS); \
+	fi
 
 bench: venv
 	$(VENV_PY) tools/coreml/bench_coreml.py

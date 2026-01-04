@@ -94,7 +94,6 @@ public final class SharpCoreMLRunner {
         let colorsPre = try get("colors_linear_pre")
         let opacitiesPre = try get("opacities_pre")
 
-        let count = meanPre.shape[1].intValue
         let post = try unproject(meanPre: meanPre, quatPre: quatPre, scalePre: scalePre, metadata: metadata)
 
         let raw = SharpRawOutputs(

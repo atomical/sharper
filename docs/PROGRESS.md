@@ -50,3 +50,8 @@ This log is append-only. Every entry includes an ISO-8601 timestamp with timezon
     - `append(...)` now has a readiness timeout and checks writer failure state.
     - `finish(...)` runs `finishWriting` on a background queue with a hard timeout to prevent indefinite hangs.
   - Added stage timing + progress logs with immediate stdout flushing for easier diagnosis in non-interactive runs.
+
+## 2026-01-04T11:29:45-06:00
+- Matched `ml-sharp` EXIF auto-rotate behavior in Swift preprocessing:
+  - `SharpPreprocessor.loadCGImage` now applies EXIF `Orientation` for values 3/6/8 (rotate 180 / 90 CW / 90 CCW) to match `sharp.utils.io.load_rgb(auto_rotate=True)`.
+  - Verified on a synthetic JPEG with EXIF orientation=6: Swift metadata reports `3x4` and disparity factor matches Python.

@@ -1,4 +1,5 @@
 import CoreML
+import CoreGraphics
 import Foundation
 import ImageIO
 
@@ -6,19 +7,45 @@ public enum SharpPreprocessError: Error {
     case imageDecodeFailed(URL)
     case rgbContextCreateFailed
     case multiArrayCreateFailed
+    case orientationTransformFailed
 }
 
 public struct SharpPreprocessor {
     public static let internalResolution: Int = 1536
 
-    public static func loadCGImage(from url: URL) throws -> CGImage {
+    public static func loadCGImage(from url: URL, autoRotate: Bool = true) throws -> CGImage {
         guard let source = CGImageSourceCreateWithURL(url as CFURL, nil) else {
             throw SharpPreprocessError.imageDecodeFailed(url)
         }
         guard let cgImage = CGImageSourceCreateImageAtIndex(source, 0, nil) else {
             throw SharpPreprocessError.imageDecodeFailed(url)
         }
-        return cgImage
+
+        guard autoRotate else { return cgImage }
+
+        let orientationRaw: UInt32
+        if let props = CGImageSourceCopyPropertiesAtIndex(source, 0, nil) as? [CFString: Any],
+           let ori = (props[kCGImagePropertyOrientation] as? NSNumber)
+        {
+            orientationRaw = ori.uint32Value
+        } else {
+            orientationRaw = 1
+        }
+
+        switch orientationRaw {
+        case 1:
+            return cgImage
+        case 3:
+            return try rotated(cgImage: cgImage, degrees: 180)
+        case 6:
+            // EXIF 6: rotate 90° clockwise.
+            return try rotated(cgImage: cgImage, degrees: -90)
+        case 8:
+            // EXIF 8: rotate 90° counter-clockwise.
+            return try rotated(cgImage: cgImage, degrees: 90)
+        default:
+            return cgImage
+        }
     }
 
     public static func loadMetadata(from url: URL, imageWidth: Int, imageHeight: Int) -> SharpInputMetadata {
@@ -197,5 +224,64 @@ public struct SharpPreprocessor {
         }
 
         return (image: image, disparityFactor: disparity)
+    }
+
+    private static func rotated(cgImage: CGImage, degrees: Int) throws -> CGImage {
+        let w = cgImage.width
+        let h = cgImage.height
+
+        let newW: Int
+        let newH: Int
+        switch degrees {
+        case 180, -180:
+            newW = w
+            newH = h
+        case 90, -90:
+            newW = h
+            newH = w
+        default:
+            return cgImage
+        }
+
+        let bytesPerRow = newW * 4
+        let colorSpace = CGColorSpaceCreateDeviceRGB()
+        let bitmapInfo = CGBitmapInfo.byteOrder32Little.rawValue | CGImageAlphaInfo.premultipliedFirst.rawValue
+        guard let ctx = CGContext(
+            data: nil,
+            width: newW,
+            height: newH,
+            bitsPerComponent: 8,
+            bytesPerRow: bytesPerRow,
+            space: colorSpace,
+            bitmapInfo: bitmapInfo
+        ) else {
+            throw SharpPreprocessError.orientationTransformFailed
+        }
+
+        ctx.interpolationQuality = .none
+        ctx.setAllowsAntialiasing(false)
+        ctx.setShouldAntialias(false)
+
+        switch degrees {
+        case 180, -180:
+            ctx.translateBy(x: CGFloat(newW), y: CGFloat(newH))
+            ctx.rotate(by: .pi)
+        case 90:
+            // 90° CCW.
+            ctx.translateBy(x: 0, y: CGFloat(newH))
+            ctx.rotate(by: -.pi / 2.0)
+        case -90:
+            // 90° CW.
+            ctx.translateBy(x: CGFloat(newW), y: 0)
+            ctx.rotate(by: .pi / 2.0)
+        default:
+            break
+        }
+
+        ctx.draw(cgImage, in: CGRect(x: 0, y: 0, width: CGFloat(w), height: CGFloat(h)))
+        guard let out = ctx.makeImage() else {
+            throw SharpPreprocessError.orientationTransformFailed
+        }
+        return out
     }
 }
