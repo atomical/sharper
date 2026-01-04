@@ -1,6 +1,6 @@
 SHELL := /bin/bash
 
-.PHONY: help venv fixtures ref export coreml validate demo bench clean
+.PHONY: help venv fixtures ref export coreml validate validate-swift demo bench clean
 .PHONY: ml-sharp
 
 PYTHON ?= python3.11
@@ -23,6 +23,7 @@ help:
 	@echo "  export    - export/trace SHARP wrapper for CoreML"
 	@echo "  coreml    - convert exported graph to CoreML .mlpackage"
 	@echo "  validate  - parity tests: PyTorch vs CoreML"
+	@echo "  validate-swift - parity tests: Swift PLY vs ref"
 	@echo "  demo      - build/run Swift demo (image→PLY→frames/video)"
 	@echo "  bench     - run CoreML benchmark harness"
 
@@ -59,6 +60,10 @@ coreml: venv
 
 validate: venv
 	$(VENV_PY) tools/coreml/validate_coreml.py --fixtures artifacts/fixtures/inputs --ref-root artifacts/fixtures/ref --coreml-root artifacts/fixtures/coreml
+
+validate-swift: venv ref coreml
+	cd Swift/SharpDemoApp && swift build -c release
+	$(VENV_PY) tools/swift/validate_swift.py --fixtures artifacts/fixtures/inputs --ref-root artifacts/fixtures/ref --swift-bin Swift/SharpDemoApp/.build/release/SharpDemoApp --model artifacts/Sharp.mlpackage
 
 SWIFT_DEMO_DIR := Swift/SharpDemoApp
 SWIFT_DEMO_BIN := $(SWIFT_DEMO_DIR)/.build/release/SharpDemoApp

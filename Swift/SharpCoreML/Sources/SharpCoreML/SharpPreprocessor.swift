@@ -102,7 +102,7 @@ public struct SharpPreprocessor {
         var rgba = Data(count: bytesPerRow * srcH)
         let ok = rgba.withUnsafeMutableBytes { rawBuf -> Bool in
             guard let base = rawBuf.baseAddress else { return false }
-            let colorSpace = CGColorSpaceCreateDeviceRGB()
+            let colorSpace = CGColorSpace(name: CGColorSpace.sRGB) ?? CGColorSpaceCreateDeviceRGB()
             let bitmapInfo = CGBitmapInfo.byteOrder32Little.rawValue | CGImageAlphaInfo.premultipliedFirst.rawValue
             guard let ctx = CGContext(
                 data: base,
@@ -113,6 +113,9 @@ public struct SharpPreprocessor {
                 space: colorSpace,
                 bitmapInfo: bitmapInfo
             ) else { return false }
+            ctx.interpolationQuality = .none
+            ctx.setAllowsAntialiasing(false)
+            ctx.setShouldAntialias(false)
             ctx.draw(cgImage, in: CGRect(x: 0, y: 0, width: srcW, height: srcH))
             return true
         }
@@ -244,7 +247,7 @@ public struct SharpPreprocessor {
         }
 
         let bytesPerRow = newW * 4
-        let colorSpace = CGColorSpaceCreateDeviceRGB()
+        let colorSpace = CGColorSpace(name: CGColorSpace.sRGB) ?? CGColorSpaceCreateDeviceRGB()
         let bitmapInfo = CGBitmapInfo.byteOrder32Little.rawValue | CGImageAlphaInfo.premultipliedFirst.rawValue
         guard let ctx = CGContext(
             data: nil,

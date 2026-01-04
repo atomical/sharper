@@ -203,9 +203,7 @@ public struct SharpPLYWriter {
     }
 
     private static func logit(_ p: Float) -> Float {
-        let eps: Float = 1e-6
-        let pp = min(max(p, eps), 1.0 - eps)
-        return log(pp / (1.0 - pp))
+        return log(p / (1.0 - p))
     }
 
     private static func disparityQuantiles10_90(meanPtr: UnsafePointer<Float>, count: Int) -> [Float] {

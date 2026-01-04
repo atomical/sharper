@@ -60,3 +60,15 @@ This log is append-only. Every entry includes an ISO-8601 timestamp with timezon
 - Upgraded Metal renderer toward true Gaussian splatting:
   - `PLYLoader` now loads per-Gaussian quaternions (wxyz) and the renderer uses them (anisotropic, view-dependent screen-space covariance).
   - Implemented weighted blended OIT (accum + revealage) to avoid per-frame depth sorting while producing stable results.
+
+## 2026-01-04T11:48:45-06:00
+- Added an end-to-end Swift parity harness (`validate-swift`):
+  - Runs the Swift demo in `--no-render` mode for each fixture and compares the emitted `scene.ply` against the PyTorch reference PLY (sampling gaussians deterministically).
+  - Emits a machine-readable report at `artifacts/fixtures/coreml/swift_validate_report.json`.
+
+## 2026-01-04T12:06:55-06:00
+- Stabilized `validate-swift` and preprocessing/PLY semantics:
+  - `tools/fixtures/generate_fixtures.py` now removes stray files in `artifacts/fixtures/inputs/` to keep the fixture set deterministic.
+  - Swift preprocessing now uses an explicit sRGB bitmap context when decoding images (avoid device color-space surprises).
+  - Swift PLY export now matches `ml-sharp` opacity-logit behavior (no clamping; allows ±inf if opacities saturate).
+  - `tools/swift/validate_swift.py` metrics/tolerances updated to be robust (p99 abs thresholds; covariance checked in absolute space).

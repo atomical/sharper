@@ -112,6 +112,11 @@ def main() -> int:
 
     out_dir: Path = args.out
     out_dir.mkdir(parents=True, exist_ok=True)
+    # Keep the fixture directory deterministic (remove stray files from previous runs).
+    exts = {".jpg", ".jpeg", ".png", ".heic", ".tif", ".tiff", ".bmp"}
+    for p in out_dir.iterdir():
+        if p.is_file() and (p.suffix.lower() in exts or p.name == "MANIFEST.txt"):
+            p.unlink()
 
     width, height = 768, 512
 
