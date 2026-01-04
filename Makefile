@@ -1,6 +1,6 @@
 SHELL := /bin/bash
 
-.PHONY: help venv fixtures ref export coreml validate validate-swift demo bench clean
+.PHONY: help venv fixtures ref export coreml coreml-fp16 validate validate-fp16 validate-swift demo bench clean
 .PHONY: ml-sharp
 
 PYTHON ?= python3.11
@@ -22,7 +22,9 @@ help:
 	@echo "  ref       - run PyTorch reference inference over fixtures"
 	@echo "  export    - export/trace SHARP wrapper for CoreML"
 	@echo "  coreml    - convert exported graph to CoreML .mlpackage"
+	@echo "  coreml-fp16 - convert to CoreML (FP16 weights)"
 	@echo "  validate  - parity tests: PyTorch vs CoreML"
+	@echo "  validate-fp16 - parity tests: PyTorch vs CoreML (FP16)"
 	@echo "  validate-swift - parity tests: Swift PLY vs ref"
 	@echo "  demo      - build/run Swift demo (image→PLY→frames/video)"
 	@echo "  bench     - run CoreML benchmark harness"
@@ -58,8 +60,15 @@ export: venv
 coreml: venv export
 	$(VENV_PY) tools/coreml/convert_to_coreml.py
 
+coreml-fp16: venv export
+	$(VENV_PY) tools/coreml/convert_to_coreml.py --precision fp16 --out artifacts/Sharp_fp16.mlpackage
+
 validate: venv fixtures ref coreml
 	$(VENV_PY) tools/coreml/validate_coreml.py --fixtures artifacts/fixtures/inputs --ref-root artifacts/fixtures/ref --coreml-root artifacts/fixtures/coreml
+
+validate-fp16: venv fixtures ref coreml-fp16
+	-$(VENV_PY) tools/coreml/validate_coreml.py --model artifacts/Sharp_fp16.mlpackage --compute-units all --fixtures artifacts/fixtures/inputs --ref-root artifacts/fixtures/ref --coreml-root artifacts/fixtures/coreml_fp16
+	@echo "note: FP16 model parity is currently best-effort; see artifacts/fixtures/coreml_fp16/parity_report.md"
 
 validate-swift: venv ref coreml
 	cd Swift/SharpDemoApp && swift package clean && swift build -c release

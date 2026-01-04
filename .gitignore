@@ -17,6 +17,7 @@ artifacts/fixtures/inputs/*.png
 artifacts/fixtures/inputs/MANIFEST.txt
 artifacts/fixtures/ref/
 artifacts/fixtures/coreml/
+artifacts/fixtures/coreml_fp16/
 artifacts/benches/
 artifacts/*.pt
 artifacts/*.pt2

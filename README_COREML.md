@@ -39,7 +39,9 @@ Notes:
 - `make ref`: PyTorch reference runner → `raw_outputs.npz` + `scene.ply`
 - `make export`: export a CoreML-friendly Torch graph (WIP)
 - `make coreml`: convert exported graph → `artifacts/Sharp.mlpackage` (WIP)
+- `make coreml-fp16`: convert exported graph → `artifacts/Sharp_fp16.mlpackage`
 - `make validate`: parity suite (PyTorch vs CoreML) (WIP)
+- `make validate-fp16`: best-effort parity report for FP16 model (expected to diverge from FP32 ref)
 - `make validate-swift`: parity suite (Swift `scene.ply` vs PyTorch reference)
 - `make demo`: Swift demo CLI (image → PLY → frames + mp4)
 - `make bench`: benchmarks (writes `artifacts/benches/bench_coreml.json` + `artifacts/benches/bench_swift.json`)

@@ -85,9 +85,12 @@ def main() -> int:
         "traced_path": str(args.traced),
         "out_path": str(args.out),
     }
-    (Path("artifacts") / "coreml_conversion_report.json").write_text(
-        json.dumps(report, indent=2, sort_keys=True) + "\n", encoding="utf-8"
-    )
+    report_path = Path("artifacts") / "coreml_conversion_report.json"
+    report_path.write_text(json.dumps(report, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    if args.precision == "fp16":
+        (Path("artifacts") / "coreml_conversion_report_fp16.json").write_text(
+            json.dumps(report, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+        )
 
     return 0
 

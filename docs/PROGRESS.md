@@ -97,3 +97,9 @@ This log is append-only. Every entry includes an ISO-8601 timestamp with timezon
   - Added and checked in `Swift/SharpDemoApp/SharpDemoAppUI.xcodeproj` plus `Swift/SharpDemoApp/project.yml` (XcodeGen spec used to generate the project).
   - Fixed `Swift/SharpCoreML/Sources/SharpCoreML/Shaders/SharpPostprocess.metal` to avoid Metal C++ lambdas (Xcode’s iOS Metal compiler rejects them).
   - Verified iOS Simulator build succeeds via `xcodebuild -project Swift/SharpDemoApp/SharpDemoAppUI.xcodeproj -scheme SharpDemoAppUI -destination 'generic/platform=iOS Simulator' build`.
+
+## 2026-01-04T14:43:20-06:00
+- FP16 model variant (performance exploration):
+  - Added `make coreml-fp16` to produce `artifacts/Sharp_fp16.mlpackage`.
+  - Attempted FP16 parity against the FP32 PyTorch reference; observed large numeric divergence (especially `opacities_pre`), so FP16 is currently marked best-effort and FP32 remains the validated model.
+  - Parity report is written to `artifacts/fixtures/coreml_fp16/parity_report.md` via `make validate-fp16`.
