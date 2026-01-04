@@ -40,6 +40,7 @@ Notes:
 - `make export`: export a CoreML-friendly Torch graph (WIP)
 - `make coreml`: convert exported graph → `artifacts/Sharp.mlpackage` (WIP)
 - `make validate`: parity suite (PyTorch vs CoreML) (WIP)
+- `make validate-swift`: parity suite (Swift `scene.ply` vs PyTorch reference)
 - `make demo`: Swift demo CLI (image → PLY → frames + mp4)
 - `make bench`: benchmarks (WIP)
 
