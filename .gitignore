@@ -23,3 +23,4 @@ artifacts/*.pt2
 artifacts/*.onnx
 artifacts/*.npz
 artifacts/*.mlpackage/
+artifacts/*.json

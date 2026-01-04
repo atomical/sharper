@@ -35,3 +35,9 @@ This log is append-only. Every entry includes an ISO-8601 timestamp with timezon
   - `docs/coreml_strategy.md` (monolith vs split plan)
   - `docs/OP_COMPAT.md` (workaround log scaffold)
   - `README_COREML.md` (build/run entrypoint)
+
+## 2026-01-04T09:42:05-06:00
+- Phase 3–5 (CoreML) baseline:
+  - Exported TorchScript graph via `tools/export/export_sharp.py` → `artifacts/Sharp_traced.pt` + `artifacts/io_sample_inputs.npz` + `artifacts/io_sample_outputs_ref.npz`.
+  - Converted to CoreML ML Program via `tools/coreml/convert_to_coreml.py` → `artifacts/Sharp.mlpackage`.
+  - Implemented parity validator `tools/coreml/validate_coreml.py`; `make validate` passes on fixture set (gated on covariance implied by `(quaternions, scales)` to avoid degeneracy artifacts).
