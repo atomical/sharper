@@ -133,3 +133,9 @@ This log is append-only. Every entry includes an ISO-8601 timestamp with timezon
 - Deferred visionOS support for now:
   - visionOS remains “best-effort” and is not a gating deliverable for this milestone.
   - Focus is on macOS + iOS functional parity (`make validate`, `make validate-swift`, `make demo`, `make ios-build`).
+
+## 2026-01-04T16:27:43-06:00
+- Improved “render” parity and robustness:
+  - `PLYLoader` now supports reading ml-sharp metadata blocks (intrinsics/image size/etc.) via `loadMLSharpCompatiblePLYWithMetadata(...)`.
+  - Fixed PLY parsing to use unaligned loads (`loadUnaligned`) since PLY binary data is not guaranteed to be 4-byte aligned after the ASCII header.
+  - Extended `Swift/SharpDemoApp` CLI with a `render` mode: `SharpDemoApp render <scene.ply> <out_dir> ...` (render without CoreML inference).

@@ -32,7 +32,13 @@ func timed<T>(_ label: String, _ block: () throws -> T) rethrows -> T {
 }
 
 struct Args {
-    var imagePath: String
+    enum Mode {
+        case predict
+        case render
+    }
+
+    var mode: Mode
+    var inputPath: String
     var outDir: String
     var modelPath: String
     var computeUnits: MLComputeUnits = .all
@@ -49,16 +55,26 @@ struct Args {
 func parseArgs() -> Args? {
     var argv = CommandLine.arguments.dropFirst()
     guard argv.count >= 2 else {
-        print("Usage: SharpDemoApp <image_path> <out_dir> [--model <mlpackage>] [--compute-units all|cpu_only|cpu_and_gpu|cpu_and_ne] [--frames N] [--size WxH] [--video out.mp4] [--fps N] [--no-render] [--bench-out bench.json] [--iters N]")
+        print("Usage:")
+        print("  SharpDemoApp [predict] <image_path> <out_dir> [--model <mlpackage>] [--compute-units all|cpu_only|cpu_and_gpu|cpu_and_ne] [--frames N] [--size WxH] [--video out.mp4] [--fps N] [--no-render] [--bench-out bench.json] [--iters N]")
+        print("  SharpDemoApp render <scene.ply> <out_dir> [--frames N] [--size WxH] [--video out.mp4] [--fps N]")
         return nil
     }
 
-    let imagePath = String(argv.removeFirst())
+    var explicitMode: Args.Mode? = nil
+    if let first = argv.first, first == "predict" || first == "render" {
+        explicitMode = (first == "render") ? .render : .predict
+        argv = argv.dropFirst()
+        guard argv.count >= 2 else { return nil }
+    }
+
+    let inputPath = String(argv.removeFirst())
     let outDir = String(argv.removeFirst())
 
     let cwd = URL(fileURLWithPath: FileManager.default.currentDirectoryPath)
     let defaultModel = cwd.appendingPathComponent("../../artifacts/Sharp.mlpackage").path
-    var args = Args(imagePath: imagePath, outDir: outDir, modelPath: defaultModel)
+    let inferredMode: Args.Mode = explicitMode ?? (inputPath.lowercased().hasSuffix(".ply") ? .render : .predict)
+    var args = Args(mode: inferredMode, inputPath: inputPath, outDir: outDir, modelPath: defaultModel)
 
     while let tok = argv.first {
         argv = argv.dropFirst()
@@ -200,17 +216,122 @@ struct SharpDemoApp {
         do {
             guard let args = parseArgs() else { exit(2) }
 
-            let imageURL = URL(fileURLWithPath: args.imagePath)
+            let inputURL = URL(fileURLWithPath: args.inputPath)
             let outURL = URL(fileURLWithPath: args.outDir, isDirectory: true)
             let modelURL = URL(fileURLWithPath: args.modelPath)
 
             log("Model: \(modelURL.path)")
-            log("Input: \(imageURL.path)")
+            log("Input: \(inputURL.path)")
             log("Out: \(outURL.path)")
             log("ComputeUnits: \(args.computeUnits)")
 
             let rssBefore = residentMemoryBytes()
             var rssPeak = rssBefore
+
+            // Render-only mode: PLY -> frames/video (no CoreML).
+            if args.mode == .render {
+                let plyURL = inputURL
+                log("Mode: render")
+
+                guard args.render else {
+                    log("Render disabled (--no-render); nothing to do.")
+                    return
+                }
+
+                let device = MTLCreateSystemDefaultDevice()
+                let (scene, meta) = try timed("Load PLY") { try PLYLoader.loadMLSharpCompatiblePLYWithMetadata(url: plyURL, device: device) }
+                let renderer = try timed("Init renderer") { try GaussianSplatRenderer(device: device) }
+                rssPeak = max(rssPeak, residentMemoryBytes())
+
+                let (center, radius): (SIMD3<Float>, Float) = timed("Compute bounds") {
+                    let meanPtr = scene.means.contents().bindMemory(to: Float.self, capacity: scene.count * 3)
+                    var minV = SIMD3<Float>(repeating: .greatestFiniteMagnitude)
+                    var maxV = SIMD3<Float>(repeating: -.greatestFiniteMagnitude)
+                    for i in 0..<scene.count {
+                        let x = meanPtr[i * 3 + 0]
+                        let y = meanPtr[i * 3 + 1]
+                        let z = meanPtr[i * 3 + 2]
+                        minV = SIMD3<Float>(min(minV.x, x), min(minV.y, y), min(minV.z, z))
+                        maxV = SIMD3<Float>(max(maxV.x, x), max(maxV.y, y), max(maxV.z, z))
+                    }
+                    let center = (minV + maxV) * 0.5
+                    let ext = (maxV - minV)
+                    let radius = max(0.5, simd_length(ext) * 0.6)
+                    return (center, radius)
+                }
+
+                let fx: Float
+                let fy: Float
+                let cx: Float
+                let cy: Float
+                if let meta, meta.intrinsic.count >= 9, meta.imageWidth > 0, meta.imageHeight > 0 {
+                    let srcW = Float(meta.imageWidth)
+                    let srcH = Float(meta.imageHeight)
+                    let fx0 = meta.intrinsic[0]
+                    let fy0 = meta.intrinsic[4]
+                    let cx0 = meta.intrinsic[2]
+                    let cy0 = meta.intrinsic[5]
+
+                    fx = fx0 * Float(args.width) / srcW
+                    fy = fy0 * Float(args.height) / srcH
+                    cx = cx0 * Float(args.width) / srcW
+                    cy = cy0 * Float(args.height) / srcH
+                    log("Using PLY intrinsics: src=\(meta.imageWidth)x\(meta.imageHeight) fx=\(String(format: "%.2f", fx0))")
+                } else {
+                    // Fallback: 60° horizontal FOV.
+                    let fovX: Float = 60.0 * Float.pi / 180.0
+                    fx = 0.5 * Float(args.width) / tan(0.5 * fovX)
+                    fy = fx
+                    cx = Float(args.width) * 0.5
+                    cy = Float(args.height) * 0.5
+                    log("Using fallback intrinsics (60° FOV).")
+                }
+
+                try FileManager.default.createDirectory(at: outURL, withIntermediateDirectories: true)
+
+                let framesDir = outURL.appendingPathComponent("frames", isDirectory: true)
+                let videoURL = args.videoPath.map { URL(fileURLWithPath: $0) }
+                var videoWriter: MP4VideoWriter? = nil
+                if let videoURL {
+                    log("Video: \(videoURL.path)")
+                    try FileManager.default.createDirectory(at: videoURL.deletingLastPathComponent(), withIntermediateDirectories: true)
+                    videoWriter = try MP4VideoWriter(url: videoURL, width: args.width, height: args.height, fps: args.fps)
+                }
+
+                for t in 0..<args.frames {
+                    autoreleasepool {
+                        log("Frame \(t + 1)/\(args.frames)")
+                        let ang = Float(t) * 2.0 * Float.pi / Float(max(args.frames, 1))
+                        let eye = center + SIMD3<Float>(radius * sin(ang), 0, radius * cos(ang))
+                        let view = PinholeCamera.lookAt(eye: eye, target: center)
+                        let cam = PinholeCamera(viewMatrix: view, fx: fx, fy: fy, cx: cx, cy: cy)
+
+                        do {
+                            let img = try renderer.renderToCGImage(scene: scene, camera: cam, width: args.width, height: args.height)
+                            let frameURL = framesDir.appendingPathComponent(String(format: "frame_%04d.png", t))
+                            try writePNG(img, to: frameURL)
+                            if let videoWriter {
+                                try videoWriter.append(img)
+                            }
+                        } catch {
+                            log("Frame \(t) failed: \(error)")
+                            exit(1)
+                        }
+                    }
+                }
+                log("Wrote frames: \(framesDir.path)")
+
+                if let videoWriter, let videoURL {
+                    log("Finishing video...")
+                    try await videoWriter.finish(timeoutSeconds: 60.0)
+                    log("Wrote video: \(videoURL.path)")
+                }
+                return
+            }
+
+            log("Mode: predict")
+
+            let imageURL = inputURL
 
             let runnerStart = CFAbsoluteTimeGetCurrent()
             let runner = try SharpCoreMLRunner(modelURL: modelURL, computeUnits: args.computeUnits)
