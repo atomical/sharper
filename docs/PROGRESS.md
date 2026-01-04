@@ -117,3 +117,8 @@ This log is append-only. Every entry includes an ISO-8601 timestamp with timezon
   - `make validate-swift` (Swift PLY vs PyTorch PLY): PASS (`artifacts/fixtures/coreml/swift_validate_report.json`).
   - `make demo` (Swift CLI predict + Metal render + mp4): PASS (writes under `artifacts/fixtures/coreml/demo/`).
   - `make ios-build` (iOS SwiftUI demo app): BUILD SUCCEEDED.
+
+## 2026-01-04T15:46:58-06:00
+- Ran benchmarks (`make bench`):
+  - Python CoreML bench wrote `artifacts/benches/bench_coreml.json` (mean ≈ 2.35s, p90 ≈ 2.58s, `compute_units=all`).
+  - Swift bench wrote `artifacts/benches/bench_swift.json` (predict ~2.0–2.3s/iter, render ≈ 40.7 FPS @ 512² orbit, 60 frames).
