@@ -41,3 +41,12 @@ This log is append-only. Every entry includes an ISO-8601 timestamp with timezon
   - Exported TorchScript graph via `tools/export/export_sharp.py` → `artifacts/Sharp_traced.pt` + `artifacts/io_sample_inputs.npz` + `artifacts/io_sample_outputs_ref.npz`.
   - Converted to CoreML ML Program via `tools/coreml/convert_to_coreml.py` → `artifacts/Sharp.mlpackage`.
   - Implemented parity validator `tools/coreml/validate_coreml.py`; `make validate` passes on fixture set (gated on covariance implied by `(quaternions, scales)` to avoid degeneracy artifacts).
+
+## 2026-01-04T10:59:05-06:00
+- Fixed Swift demo video export hang:
+  - Repro: `timeout 120s SharpDemoApp ... --video out.mp4` would stall after writing frames (stuck finishing `AVAssetWriter`).
+  - Made `SharpDemoApp` an async `@main` entrypoint and await video finalization instead of blocking with a semaphore.
+  - Hardened `MP4VideoWriter`:
+    - `append(...)` now has a readiness timeout and checks writer failure state.
+    - `finish(...)` runs `finishWriting` on a background queue with a hard timeout to prevent indefinite hangs.
+  - Added stage timing + progress logs with immediate stdout flushing for easier diagnosis in non-interactive runs.

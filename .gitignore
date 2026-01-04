@@ -24,3 +24,10 @@ artifacts/*.onnx
 artifacts/*.npz
 artifacts/*.mlpackage/
 artifacts/*.json
+
+# SwiftPM / Xcode build products
+Swift/**/.build/
+Swift/**/.swiftpm/
+*.xcodeproj/
+*.xcworkspace/
+DerivedData/
