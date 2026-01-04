@@ -1,0 +1,25 @@
+.DS_Store
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Local Python env
+.venv/
+
+# Reference repo clone (fetched on demand)
+third_party/ml-sharp/
+
+# Generated artifacts (produced by Makefile targets)
+artifacts/fixtures/inputs/*.jpg
+artifacts/fixtures/inputs/*.jpeg
+artifacts/fixtures/inputs/*.png
+artifacts/fixtures/inputs/MANIFEST.txt
+artifacts/fixtures/ref/
+artifacts/fixtures/coreml/
+artifacts/benches/
+artifacts/*.pt
+artifacts/*.pt2
+artifacts/*.onnx
+artifacts/*.npz
+artifacts/*.mlpackage/
