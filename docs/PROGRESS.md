@@ -110,3 +110,10 @@ This log is append-only. Every entry includes an ISO-8601 timestamp with timezon
 ## 2026-01-04T15:26:39-06:00
 - Hardened watchdog timeouts to avoid “timeout hangs”:
   - Updated `Makefile` to use `timeout -k <kill_after> <duration> ...` so the demo/bench runs are force-killed if they fail to exit after SIGTERM (default `TIMEOUT_KILL_AFTER=10s`).
+
+## 2026-01-04T15:43:38-06:00
+- Ran end-to-end quality gates on the current tree:
+  - `make validate` (PyTorch vs CoreML): PASS (`artifacts/fixtures/coreml/parity_report.md`).
+  - `make validate-swift` (Swift PLY vs PyTorch PLY): PASS (`artifacts/fixtures/coreml/swift_validate_report.json`).
+  - `make demo` (Swift CLI predict + Metal render + mp4): PASS (writes under `artifacts/fixtures/coreml/demo/`).
+  - `make ios-build` (iOS SwiftUI demo app): BUILD SUCCEEDED.
