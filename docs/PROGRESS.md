@@ -28,3 +28,10 @@ This log is append-only. Every entry includes an ISO-8601 timestamp with timezon
 
 ## 2026-01-04T09:24:18-06:00
 - Updated `Makefile` to fetch pinned `ml-sharp` automatically and to use a venv dependency stamp for reproducible installs.
+
+## 2026-01-04T09:27:56-06:00
+- Wrote CoreML-facing documentation:
+  - `docs/io_contract.md` (exact preprocessing + tensor semantics)
+  - `docs/coreml_strategy.md` (monolith vs split plan)
+  - `docs/OP_COMPAT.md` (workaround log scaffold)
+  - `README_COREML.md` (build/run entrypoint)
