@@ -1,4 +1,5 @@
 import CoreGraphics
+import Dispatch
 import Foundation
 import Metal
 import simd
@@ -60,11 +61,9 @@ public final class GaussianSplatRenderer {
         }
         self.commandQueue = commandQueue
 
-        guard let shaderURL = Bundle.module.url(forResource: "GaussianSplat", withExtension: "metal") else {
-            throw GaussianSplatRendererError.libraryLoadFailed
-        }
-        let source = try String(contentsOf: shaderURL, encoding: .utf8)
-        let library = try device.makeLibrary(source: source, options: nil)
+        // Load precompiled metallib embedded in Swift sources (required on iOS/visionOS).
+        let libraryData = MetalLibrary_GaussianSplat.data.withUnsafeBytes { DispatchData(bytes: $0) }
+        let library = try device.makeLibrary(data: libraryData)
         guard let splatV = library.makeFunction(name: "splatVertex"),
               let splatF = library.makeFunction(name: "splatFragmentOIT"),
               let compV = library.makeFunction(name: "compositeVertex"),

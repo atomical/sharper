@@ -55,3 +55,4 @@ Notes:
 
 - If `make venv` fails with missing `python3.11`: install via Homebrew and retry.
 - If model download is slow/unreliable: rerun `make ref` (torch will resume or reuse cache once complete).
+- If Swift build errors mention missing `MetalLibrary_*`: run `make demo` or `make validate-swift` (they do a `swift package clean`), or manually run `cd Swift/SharpDemoApp && swift package clean`.

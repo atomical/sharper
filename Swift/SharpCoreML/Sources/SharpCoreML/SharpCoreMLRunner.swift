@@ -1,4 +1,5 @@
 import CoreML
+import Dispatch
 import Foundation
 import Metal
 
@@ -55,12 +56,9 @@ public final class SharpCoreMLRunner {
         self.device = device
         self.commandQueue = commandQueue
 
-        // Compile Metal postprocess kernel from source bundled as a resource.
-        guard let shaderURL = Bundle.module.url(forResource: "SharpPostprocess", withExtension: "metal") else {
-            throw SharpCoreMLError.metalLibraryLoadFailed
-        }
-        let source = try String(contentsOf: shaderURL, encoding: .utf8)
-        let library = try device.makeLibrary(source: source, options: nil)
+        // Load precompiled metallib embedded in Swift sources (required on iOS/visionOS).
+        let libraryData = MetalLibrary_SharpPostprocess.data.withUnsafeBytes { DispatchData(bytes: $0) }
+        let library = try device.makeLibrary(data: libraryData)
         guard let fn = library.makeFunction(name: "unprojectGaussians") else {
             throw SharpCoreMLError.metalLibraryLoadFailed
         }

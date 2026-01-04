@@ -62,7 +62,7 @@ validate: venv
 	$(VENV_PY) tools/coreml/validate_coreml.py --fixtures artifacts/fixtures/inputs --ref-root artifacts/fixtures/ref --coreml-root artifacts/fixtures/coreml
 
 validate-swift: venv ref coreml
-	cd Swift/SharpDemoApp && swift build -c release
+	cd Swift/SharpDemoApp && swift package clean && swift build -c release
 	$(VENV_PY) tools/swift/validate_swift.py --fixtures artifacts/fixtures/inputs --ref-root artifacts/fixtures/ref --swift-bin Swift/SharpDemoApp/.build/release/SharpDemoApp --model artifacts/Sharp.mlpackage
 
 SWIFT_DEMO_DIR := Swift/SharpDemoApp
@@ -77,7 +77,7 @@ DEMO_FPS ?= 30
 DEMO_TIMEOUT ?= 300s
 
 demo: coreml fixtures
-	cd $(SWIFT_DEMO_DIR) && swift build -c release
+	cd $(SWIFT_DEMO_DIR) && swift package clean && swift build -c release
 	mkdir -p $(DEMO_OUT)
 	@if [ -n "$(TIMEOUT_BIN)" ]; then \
 		cd $(SWIFT_DEMO_DIR) && $(TIMEOUT_BIN) $(DEMO_TIMEOUT) .build/release/SharpDemoApp ../../$(DEMO_IMAGE) ../../$(DEMO_OUT) --frames $(DEMO_FRAMES) --size $(DEMO_SIZE) --video ../../$(DEMO_OUT)/out.mp4 --fps $(DEMO_FPS); \

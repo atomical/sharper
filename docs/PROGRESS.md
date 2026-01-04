@@ -72,3 +72,12 @@ This log is append-only. Every entry includes an ISO-8601 timestamp with timezon
   - Swift preprocessing now uses an explicit sRGB bitmap context when decoding images (avoid device color-space surprises).
   - Swift PLY export now matches `ml-sharp` opacity-logit behavior (no clamping; allows ±inf if opacities saturate).
   - `tools/swift/validate_swift.py` metrics/tolerances updated to be robust (p99 abs thresholds; covariance checked in absolute space).
+
+## 2026-01-04T12:40:05-06:00
+- Fixed SwiftPM shader library packaging for dependency builds:
+  - Observed `Swift/SharpDemoApp` failing with `cannot find 'MetalLibrary_*' in scope` because SwiftPM build tool plugins attached inside dependency packages were not executed when building the top-level demo app.
+  - Switched to checked-in, platform-specific embedded `.metallib` blobs:
+    - `Swift/GaussianSplatMetalRenderer/Sources/GaussianSplatMetalRenderer/MetalLibrary_GaussianSplat.swift`
+    - `Swift/SharpCoreML/Sources/SharpCoreML/MetalLibrary_SharpPostprocess.swift`
+  - Added generator `tools/metal/embed_metallib.py` (compiles `.metal` for `macosx`/`iphoneos`/`iphonesimulator` and selects at compile time).
+  - Updated `Makefile` Swift targets to run `swift package clean` before building to avoid stale source lists after adding new files.
