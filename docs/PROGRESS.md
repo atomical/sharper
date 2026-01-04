@@ -106,3 +106,7 @@ This log is append-only. Every entry includes an ISO-8601 timestamp with timezon
 
 ## 2026-01-04T14:46:15-06:00
 - Added `make ios-build` to build the iOS SwiftUI demo app (`Swift/SharpDemoApp/SharpDemoAppUI.xcodeproj`) via `xcodebuild` for CI-style smoke checks.
+
+## 2026-01-04T15:26:39-06:00
+- Hardened watchdog timeouts to avoid “timeout hangs”:
+  - Updated `Makefile` to use `timeout -k <kill_after> <duration> ...` so the demo/bench runs are force-killed if they fail to exit after SIGTERM (default `TIMEOUT_KILL_AFTER=10s`).

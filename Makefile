@@ -78,6 +78,7 @@ validate-swift: venv ref coreml
 SWIFT_DEMO_DIR := Swift/SharpDemoApp
 SWIFT_DEMO_BIN := $(SWIFT_DEMO_DIR)/.build/release/SharpDemoApp
 TIMEOUT_BIN := $(shell command -v timeout 2>/dev/null || command -v gtimeout 2>/dev/null || true)
+TIMEOUT_KILL_AFTER ?= 10s
 
 DEMO_IMAGE ?= artifacts/fixtures/inputs/indoor_teaser.jpg
 DEMO_OUT ?= artifacts/fixtures/coreml/demo
@@ -90,7 +91,7 @@ demo: coreml fixtures
 	cd $(SWIFT_DEMO_DIR) && swift package clean && swift build -c release
 	mkdir -p $(DEMO_OUT)
 	@if [ -n "$(TIMEOUT_BIN)" ]; then \
-		cd $(SWIFT_DEMO_DIR) && $(TIMEOUT_BIN) $(DEMO_TIMEOUT) .build/release/SharpDemoApp ../../$(DEMO_IMAGE) ../../$(DEMO_OUT) --frames $(DEMO_FRAMES) --size $(DEMO_SIZE) --video ../../$(DEMO_OUT)/out.mp4 --fps $(DEMO_FPS); \
+		cd $(SWIFT_DEMO_DIR) && $(TIMEOUT_BIN) -k $(TIMEOUT_KILL_AFTER) $(DEMO_TIMEOUT) .build/release/SharpDemoApp ../../$(DEMO_IMAGE) ../../$(DEMO_OUT) --frames $(DEMO_FRAMES) --size $(DEMO_SIZE) --video ../../$(DEMO_OUT)/out.mp4 --fps $(DEMO_FPS); \
 	else \
 		echo "warning: timeout not found; running demo without a watchdog"; \
 		cd $(SWIFT_DEMO_DIR) && .build/release/SharpDemoApp ../../$(DEMO_IMAGE) ../../$(DEMO_OUT) --frames $(DEMO_FRAMES) --size $(DEMO_SIZE) --video ../../$(DEMO_OUT)/out.mp4 --fps $(DEMO_FPS); \
@@ -107,7 +108,7 @@ bench: venv coreml fixtures
 	mkdir -p artifacts/benches artifacts/benches/swift_run
 	cd Swift/SharpDemoApp && swift package clean && swift build -c release
 	@if [ -n "$(TIMEOUT_BIN)" ]; then \
-		cd $(SWIFT_DEMO_DIR) && $(TIMEOUT_BIN) 600s .build/release/SharpDemoApp ../../$(DEMO_IMAGE) ../../artifacts/benches/swift_run --model ../../artifacts/Sharp.mlpackage --iters 5 --frames 60 --size $(DEMO_SIZE) --bench-out ../../artifacts/benches/bench_swift.json; \
+		cd $(SWIFT_DEMO_DIR) && $(TIMEOUT_BIN) -k $(TIMEOUT_KILL_AFTER) 600s .build/release/SharpDemoApp ../../$(DEMO_IMAGE) ../../artifacts/benches/swift_run --model ../../artifacts/Sharp.mlpackage --iters 5 --frames 60 --size $(DEMO_SIZE) --bench-out ../../artifacts/benches/bench_swift.json; \
 	else \
 		echo "warning: timeout not found; running swift bench without a watchdog"; \
 		cd $(SWIFT_DEMO_DIR) && .build/release/SharpDemoApp ../../$(DEMO_IMAGE) ../../artifacts/benches/swift_run --model ../../artifacts/Sharp.mlpackage --iters 5 --frames 60 --size $(DEMO_SIZE) --bench-out ../../artifacts/benches/bench_swift.json; \
