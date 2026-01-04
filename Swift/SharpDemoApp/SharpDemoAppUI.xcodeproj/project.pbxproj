@@ -12,6 +12,11 @@
 		2BF314CA7353D39BFFDB6FDF /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 058ECA609E04A2A83F486D86 /* ContentView.swift */; };
 		4C0421FD033F3F90B6A826AA /* SceneDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E9C51D6C09FF5C695FF82E5 /* SceneDelegate.swift */; };
 		98CBB5BD66AD700492CCACBC /* SharpDemoAppUIApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = E660D1D42BAAFB2AC02FE96A /* SharpDemoAppUIApp.swift */; };
+		A77ECAC77C2CD57118DFA5BB /* SharpDemoAppUIApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = E660D1D42BAAFB2AC02FE96A /* SharpDemoAppUIApp.swift */; };
+		AA63CC89FA414EDDFBAB44EB /* SharpCoreML in Frameworks */ = {isa = PBXBuildFile; productRef = B7DD143C608E215876677DAE /* SharpCoreML */; };
+		BCEFE8A287CA8624AE03C56D /* SceneDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E9C51D6C09FF5C695FF82E5 /* SceneDelegate.swift */; };
+		D75D19A2D39C82FDCBB4F5A2 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 058ECA609E04A2A83F486D86 /* ContentView.swift */; };
+		F7BDBFCABAF825CCD747DA8A /* GaussianSplatMetalRenderer in Frameworks */ = {isa = PBXBuildFile; productRef = 6AA391516FB7D6DC9510A2AD /* GaussianSplatMetalRenderer */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -21,6 +26,7 @@
 		4F2CB671433B4CB87B53F26B /* SharpDemoAppUI.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = SharpDemoAppUI.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		6E9C51D6C09FF5C695FF82E5 /* SceneDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SceneDelegate.swift; sourceTree = "<group>"; };
 		C18EACB0304CFB89590C5E08 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		C7DE9ADEFFDC2B5201FED957 /* SharpDemoAppVision.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = SharpDemoAppVision.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		E660D1D42BAAFB2AC02FE96A /* SharpDemoAppUIApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SharpDemoAppUIApp.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -31,6 +37,15 @@
 			files = (
 				08093752F7E1FBA22EF16537 /* SharpCoreML in Frameworks */,
 				1668E4EB6E805942B75D5666 /* GaussianSplatMetalRenderer in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		DBF23B492E14B3ED197C5A0E /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				AA63CC89FA414EDDFBAB44EB /* SharpCoreML in Frameworks */,
+				F7BDBFCABAF825CCD747DA8A /* GaussianSplatMetalRenderer in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -61,6 +76,7 @@
 			isa = PBXGroup;
 			children = (
 				4F2CB671433B4CB87B53F26B /* SharpDemoAppUI.app */,
+				C7DE9ADEFFDC2B5201FED957 /* SharpDemoAppVision.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -77,6 +93,26 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
+		4AD39CE7B500201AE09A5A76 /* SharpDemoAppVision */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 8E615BCB66467B71C3328F91 /* Build configuration list for PBXNativeTarget "SharpDemoAppVision" */;
+			buildPhases = (
+				73A4B5171ECE125A9E2F61CE /* Sources */,
+				DBF23B492E14B3ED197C5A0E /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = SharpDemoAppVision;
+			packageProductDependencies = (
+				B7DD143C608E215876677DAE /* SharpCoreML */,
+				6AA391516FB7D6DC9510A2AD /* GaussianSplatMetalRenderer */,
+			);
+			productName = SharpDemoAppVision;
+			productReference = C7DE9ADEFFDC2B5201FED957 /* SharpDemoAppVision.app */;
+			productType = "com.apple.product-type.application";
+		};
 		607DDD92601EA960FA1CA289 /* SharpDemoAppUI */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = 2C7FACEC318224DD8B06C8CF /* Build configuration list for PBXNativeTarget "SharpDemoAppUI" */;
@@ -125,11 +161,22 @@
 			projectRoot = "";
 			targets = (
 				607DDD92601EA960FA1CA289 /* SharpDemoAppUI */,
+				4AD39CE7B500201AE09A5A76 /* SharpDemoAppVision */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXSourcesBuildPhase section */
+		73A4B5171ECE125A9E2F61CE /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				D75D19A2D39C82FDCBB4F5A2 /* ContentView.swift in Sources */,
+				BCEFE8A287CA8624AE03C56D /* SceneDelegate.swift in Sources */,
+				A77ECAC77C2CD57118DFA5BB /* SharpDemoAppUIApp.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		9418EE43B666761E96F59789 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -198,12 +245,32 @@
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				SDKROOT = iphoneos;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 5.0;
 			};
 			name = Debug;
+		};
+		23807901A986A748C27FA163 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = "";
+				CODE_SIGNING_ALLOWED = NO;
+				CODE_SIGNING_REQUIRED = NO;
+				CODE_SIGN_IDENTITY = "";
+				CURRENT_PROJECT_VERSION = 1;
+				INFOPLIST_FILE = App/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.openai.sharper.SharpDemoAppVision;
+				SDKROOT = xros;
+				TARGETED_DEVICE_FAMILY = 7;
+				XROS_DEPLOYMENT_TARGET = 1.0;
+			};
+			name = Release;
 		};
 		24DE5D8F5D4EB9099B83C1F4 /* Release */ = {
 			isa = XCBuildConfiguration;
@@ -253,7 +320,6 @@
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				SDKROOT = iphoneos;
 				SWIFT_COMPILATION_MODE = wholemodule;
 				SWIFT_OPTIMIZATION_LEVEL = "-O";
 				SWIFT_VERSION = 5.0;
@@ -302,6 +368,27 @@
 			};
 			name = Debug;
 		};
+		7105622D6582FD391DEF68C1 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = "";
+				CODE_SIGNING_ALLOWED = NO;
+				CODE_SIGNING_REQUIRED = NO;
+				CODE_SIGN_IDENTITY = "";
+				CURRENT_PROJECT_VERSION = 1;
+				INFOPLIST_FILE = App/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.openai.sharper.SharpDemoAppVision;
+				SDKROOT = xros;
+				TARGETED_DEVICE_FAMILY = 7;
+				XROS_DEPLOYMENT_TARGET = 1.0;
+			};
+			name = Debug;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -310,6 +397,15 @@
 			buildConfigurations = (
 				6E1EF33BEEA8F280DB2DCCEB /* Debug */,
 				53717C1EF1C354F6BA5D60C3 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		8E615BCB66467B71C3328F91 /* Build configuration list for PBXNativeTarget "SharpDemoAppVision" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				7105622D6582FD391DEF68C1 /* Debug */,
+				23807901A986A748C27FA163 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Debug;
@@ -344,6 +440,14 @@
 		57BE77FF3226884A8476B889 /* GaussianSplatMetalRenderer */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = GaussianSplatMetalRenderer;
+		};
+		6AA391516FB7D6DC9510A2AD /* GaussianSplatMetalRenderer */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = GaussianSplatMetalRenderer;
+		};
+		B7DD143C608E215876677DAE /* SharpCoreML */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = SharpCoreML;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

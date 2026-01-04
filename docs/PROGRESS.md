@@ -122,3 +122,9 @@ This log is append-only. Every entry includes an ISO-8601 timestamp with timezon
 - Ran benchmarks (`make bench`):
   - Python CoreML bench wrote `artifacts/benches/bench_coreml.json` (mean ≈ 2.35s, p90 ≈ 2.58s, `compute_units=all`).
   - Swift bench wrote `artifacts/benches/bench_swift.json` (predict ~2.0–2.3s/iter, render ≈ 40.7 FPS @ 512² orbit, 60 frames).
+
+## 2026-01-04T15:54:04-06:00
+- Added visionOS demo app wiring (best-effort; depends on Xcode Components):
+  - Added `SharpDemoAppVision` visionOS target to `Swift/SharpDemoApp/project.yml` and regenerated `Swift/SharpDemoApp/SharpDemoAppUI.xcodeproj` via `xcodegen`.
+  - Added `make visionos-build` (fails fast with a clear message if the visionOS Simulator runtime is not installed).
+  - Note: on this machine `xcrun simctl list runtimes` shows no visionOS runtimes, so `make visionos-build` will instruct you to install the runtime via Xcode > Settings > Components.

@@ -31,3 +31,23 @@ targets:
     info:
       path: App/Info.plist
 
+  SharpDemoAppVision:
+    type: application
+    platform: visionOS
+    deploymentTarget: "1.0"
+    sources:
+      - path: App
+    dependencies:
+      - package: SharpCoreML
+      - package: GaussianSplatMetalRenderer
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.openai.sharper.SharpDemoAppVision
+        MARKETING_VERSION: "1.0"
+        CURRENT_PROJECT_VERSION: "1"
+        ASSETCATALOG_COMPILER_APPICON_NAME: ""
+        CODE_SIGNING_ALLOWED: NO
+        CODE_SIGNING_REQUIRED: NO
+        CODE_SIGN_IDENTITY: ""
+    info:
+      path: App/Info.plist

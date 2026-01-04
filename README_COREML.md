@@ -45,12 +45,16 @@ Notes:
 - `make validate-swift`: parity suite (Swift `scene.ply` vs PyTorch reference)
 - `make demo`: Swift demo CLI (image → PLY → frames + mp4)
 - `make ios-build`: build the iOS SwiftUI demo app (Xcode required)
+- `make visionos-build`: build the visionOS SwiftUI demo app (Xcode required)
 - `make bench`: benchmarks (writes `artifacts/benches/bench_coreml.json` + `artifacts/benches/bench_swift.json`)
 
 ## iOS / visionOS Demo App
 
 - Open `Swift/SharpDemoApp/SharpDemoAppUI.xcodeproj` in Xcode.
-- Run on an iOS Simulator/device.
+- Select a scheme:
+  - `SharpDemoAppUI` (iOS)
+  - `SharpDemoAppVision` (visionOS) — requires the visionOS Simulator runtime installed via Xcode > Settings > Components.
+- Run on a simulator/device for the selected platform.
 - In the app UI:
   - Select `artifacts/Sharp.mlpackage` (generate it first via `make coreml`).
   - Select an input image.

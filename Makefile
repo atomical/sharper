@@ -1,6 +1,6 @@
 SHELL := /bin/bash
 
-.PHONY: help venv fixtures ref export coreml coreml-fp16 validate validate-fp16 validate-swift demo ios-build bench clean
+.PHONY: help venv fixtures ref export coreml coreml-fp16 validate validate-fp16 validate-swift demo ios-build visionos-build bench clean
 .PHONY: ml-sharp
 
 PYTHON ?= python3.11
@@ -28,6 +28,7 @@ help:
 	@echo "  validate-swift - parity tests: Swift PLY vs ref"
 	@echo "  demo      - build/run Swift demo (image→PLY→frames/video)"
 	@echo "  ios-build - build iOS SwiftUI demo app"
+	@echo "  visionos-build - build visionOS SwiftUI demo app"
 	@echo "  bench     - run CoreML benchmark harness"
 
 $(VENV_PY):
@@ -99,9 +100,18 @@ demo: coreml fixtures
 
 IOS_PROJECT := Swift/SharpDemoApp/SharpDemoAppUI.xcodeproj
 IOS_SCHEME := SharpDemoAppUI
+VISIONOS_SCHEME := SharpDemoAppVision
 
 ios-build:
 	xcodebuild -project "$(IOS_PROJECT)" -scheme "$(IOS_SCHEME)" -destination "generic/platform=iOS Simulator" -configuration Debug build
+
+visionos-build:
+	@if ! xcrun simctl list runtimes | grep -q "visionOS"; then \
+		echo "error: visionOS Simulator runtime not installed."; \
+		echo "Install it via Xcode > Settings > Components, then rerun: make visionos-build"; \
+		exit 2; \
+	fi
+	xcodebuild -project "$(IOS_PROJECT)" -scheme "$(VISIONOS_SCHEME)" -destination "generic/platform=visionOS Simulator" -configuration Debug build
 
 bench: venv coreml fixtures
 	$(VENV_PY) tools/coreml/bench_coreml.py --out artifacts/benches/bench_coreml.json
