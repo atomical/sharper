@@ -1,0 +1,351 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		08093752F7E1FBA22EF16537 /* SharpCoreML in Frameworks */ = {isa = PBXBuildFile; productRef = 18EEF73D61A78888FE6F6EA5 /* SharpCoreML */; };
+		1668E4EB6E805942B75D5666 /* GaussianSplatMetalRenderer in Frameworks */ = {isa = PBXBuildFile; productRef = 57BE77FF3226884A8476B889 /* GaussianSplatMetalRenderer */; };
+		2BF314CA7353D39BFFDB6FDF /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 058ECA609E04A2A83F486D86 /* ContentView.swift */; };
+		4C0421FD033F3F90B6A826AA /* SceneDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E9C51D6C09FF5C695FF82E5 /* SceneDelegate.swift */; };
+		98CBB5BD66AD700492CCACBC /* SharpDemoAppUIApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = E660D1D42BAAFB2AC02FE96A /* SharpDemoAppUIApp.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		058ECA609E04A2A83F486D86 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		21734A1327774AEE3FCF3BCF /* GaussianSplatMetalRenderer */ = {isa = PBXFileReference; lastKnownFileType = folder; name = GaussianSplatMetalRenderer; path = ../GaussianSplatMetalRenderer; sourceTree = SOURCE_ROOT; };
+		358710C85B842F271BD791EF /* SharpCoreML */ = {isa = PBXFileReference; lastKnownFileType = folder; name = SharpCoreML; path = ../SharpCoreML; sourceTree = SOURCE_ROOT; };
+		4F2CB671433B4CB87B53F26B /* SharpDemoAppUI.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = SharpDemoAppUI.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		6E9C51D6C09FF5C695FF82E5 /* SceneDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SceneDelegate.swift; sourceTree = "<group>"; };
+		C18EACB0304CFB89590C5E08 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		E660D1D42BAAFB2AC02FE96A /* SharpDemoAppUIApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SharpDemoAppUIApp.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		0EAF7E579E1F490CFC00EB07 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				08093752F7E1FBA22EF16537 /* SharpCoreML in Frameworks */,
+				1668E4EB6E805942B75D5666 /* GaussianSplatMetalRenderer in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		152C6B55E1992D88F8954537 /* App */ = {
+			isa = PBXGroup;
+			children = (
+				058ECA609E04A2A83F486D86 /* ContentView.swift */,
+				C18EACB0304CFB89590C5E08 /* Info.plist */,
+				6E9C51D6C09FF5C695FF82E5 /* SceneDelegate.swift */,
+				E660D1D42BAAFB2AC02FE96A /* SharpDemoAppUIApp.swift */,
+			);
+			path = App;
+			sourceTree = "<group>";
+		};
+		37A4DD8F0E0A81AC1D678F00 = {
+			isa = PBXGroup;
+			children = (
+				152C6B55E1992D88F8954537 /* App */,
+				FADE61B57A3D79EA1286E06C /* Packages */,
+				742B0B7E063B6E2B54A9F48D /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		742B0B7E063B6E2B54A9F48D /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				4F2CB671433B4CB87B53F26B /* SharpDemoAppUI.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		FADE61B57A3D79EA1286E06C /* Packages */ = {
+			isa = PBXGroup;
+			children = (
+				21734A1327774AEE3FCF3BCF /* GaussianSplatMetalRenderer */,
+				358710C85B842F271BD791EF /* SharpCoreML */,
+			);
+			name = Packages;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		607DDD92601EA960FA1CA289 /* SharpDemoAppUI */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 2C7FACEC318224DD8B06C8CF /* Build configuration list for PBXNativeTarget "SharpDemoAppUI" */;
+			buildPhases = (
+				9418EE43B666761E96F59789 /* Sources */,
+				0EAF7E579E1F490CFC00EB07 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = SharpDemoAppUI;
+			packageProductDependencies = (
+				18EEF73D61A78888FE6F6EA5 /* SharpCoreML */,
+				57BE77FF3226884A8476B889 /* GaussianSplatMetalRenderer */,
+			);
+			productName = SharpDemoAppUI;
+			productReference = 4F2CB671433B4CB87B53F26B /* SharpDemoAppUI.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		E4D77B69FF17D59053A0A47B /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+				LastUpgradeCheck = 1430;
+			};
+			buildConfigurationList = BCDBEFB9715F682D22AECEDD /* Build configuration list for PBXProject "SharpDemoAppUI" */;
+			compatibilityVersion = "Xcode 14.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				Base,
+				en,
+			);
+			mainGroup = 37A4DD8F0E0A81AC1D678F00;
+			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				DDCA08AD7C72F60374166FB8 /* XCLocalSwiftPackageReference "../GaussianSplatMetalRenderer" */,
+				AC8EEF1E70CAEC918A2CCA19 /* XCLocalSwiftPackageReference "../SharpCoreML" */,
+			);
+			preferredProjectObjectVersion = 77;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				607DDD92601EA960FA1CA289 /* SharpDemoAppUI */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXSourcesBuildPhase section */
+		9418EE43B666761E96F59789 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				2BF314CA7353D39BFFDB6FDF /* ContentView.swift in Sources */,
+				4C0421FD033F3F90B6A826AA /* SceneDelegate.swift in Sources */,
+				98CBB5BD66AD700492CCACBC /* SharpDemoAppUIApp.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		0EC95390600379D7A9452602 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					"DEBUG=1",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		24DE5D8F5D4EB9099B83C1F4 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+		53717C1EF1C354F6BA5D60C3 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = "";
+				CODE_SIGNING_ALLOWED = NO;
+				CODE_SIGNING_REQUIRED = NO;
+				CODE_SIGN_IDENTITY = "";
+				CURRENT_PROJECT_VERSION = 1;
+				INFOPLIST_FILE = App/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.openai.sharper.SharpDemoAppUI;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		6E1EF33BEEA8F280DB2DCCEB /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = "";
+				CODE_SIGNING_ALLOWED = NO;
+				CODE_SIGNING_REQUIRED = NO;
+				CODE_SIGN_IDENTITY = "";
+				CURRENT_PROJECT_VERSION = 1;
+				INFOPLIST_FILE = App/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.openai.sharper.SharpDemoAppUI;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		2C7FACEC318224DD8B06C8CF /* Build configuration list for PBXNativeTarget "SharpDemoAppUI" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				6E1EF33BEEA8F280DB2DCCEB /* Debug */,
+				53717C1EF1C354F6BA5D60C3 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		BCDBEFB9715F682D22AECEDD /* Build configuration list for PBXProject "SharpDemoAppUI" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				0EC95390600379D7A9452602 /* Debug */,
+				24DE5D8F5D4EB9099B83C1F4 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+/* End XCConfigurationList section */
+
+/* Begin XCLocalSwiftPackageReference section */
+		AC8EEF1E70CAEC918A2CCA19 /* XCLocalSwiftPackageReference "../SharpCoreML" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = ../SharpCoreML;
+		};
+		DDCA08AD7C72F60374166FB8 /* XCLocalSwiftPackageReference "../GaussianSplatMetalRenderer" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = ../GaussianSplatMetalRenderer;
+		};
+/* End XCLocalSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		18EEF73D61A78888FE6F6EA5 /* SharpCoreML */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = SharpCoreML;
+		};
+		57BE77FF3226884A8476B889 /* GaussianSplatMetalRenderer */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = GaussianSplatMetalRenderer;
+		};
+/* End XCSwiftPackageProductDependency section */
+	};
+	rootObject = E4D77B69FF17D59053A0A47B /* Project object */;
+}

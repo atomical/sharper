@@ -30,4 +30,6 @@ Swift/**/.build/
 Swift/**/.swiftpm/
 *.xcodeproj/
 *.xcworkspace/
+# Keep the demo app Xcode project checked in.
+!Swift/SharpDemoApp/SharpDemoAppUI.xcodeproj/
 DerivedData/

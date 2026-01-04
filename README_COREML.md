@@ -44,6 +44,15 @@ Notes:
 - `make demo`: Swift demo CLI (image → PLY → frames + mp4)
 - `make bench`: benchmarks (writes `artifacts/benches/bench_coreml.json` + `artifacts/benches/bench_swift.json`)
 
+## iOS / visionOS Demo App
+
+- Open `Swift/SharpDemoApp/SharpDemoAppUI.xcodeproj` in Xcode.
+- Run on an iOS Simulator/device.
+- In the app UI:
+  - Select `artifacts/Sharp.mlpackage` (generate it first via `make coreml`).
+  - Select an input image.
+  - Tap **Predict → PLY** or **Predict + Render Frame**.
+
 ## Key Docs
 
 - `docs/io_contract.md`: exact preprocessing + tensor semantics (source of truth)

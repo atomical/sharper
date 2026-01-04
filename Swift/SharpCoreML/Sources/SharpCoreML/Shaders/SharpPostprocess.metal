@@ -123,35 +123,35 @@ static inline void jacobi_eigen(thread float3x3 &a, thread float3x3 &v) {
     }
 }
 
+static inline void swap_cols(thread float3x3 &evecs, uint i, uint j) {
+    float3 tmp = float3(evecs[0][i], evecs[1][i], evecs[2][i]);
+    evecs[0][i] = evecs[0][j];
+    evecs[1][i] = evecs[1][j];
+    evecs[2][i] = evecs[2][j];
+    evecs[0][j] = tmp.x;
+    evecs[1][j] = tmp.y;
+    evecs[2][j] = tmp.z;
+}
+
 static inline void sort_eigenpairs_desc(thread float3 &evals, thread float3x3 &evecs) {
     // Sort (evals, columns of evecs) by descending evals.
-    auto swap_cols = [&](uint i, uint j) {
-        float3 tmp = float3(evecs[0][i], evecs[1][i], evecs[2][i]);
-        evecs[0][i] = evecs[0][j];
-        evecs[1][i] = evecs[1][j];
-        evecs[2][i] = evecs[2][j];
-        evecs[0][j] = tmp.x;
-        evecs[1][j] = tmp.y;
-        evecs[2][j] = tmp.z;
-    };
-
     if (evals.x < evals.y) {
         float t = evals.x;
         evals.x = evals.y;
         evals.y = t;
-        swap_cols(0, 1);
+        swap_cols(evecs, 0, 1);
     }
     if (evals.y < evals.z) {
         float t = evals.y;
         evals.y = evals.z;
         evals.z = t;
-        swap_cols(1, 2);
+        swap_cols(evecs, 1, 2);
     }
     if (evals.x < evals.y) {
         float t = evals.x;
         evals.x = evals.y;
         evals.y = t;
-        swap_cols(0, 1);
+        swap_cols(evecs, 0, 1);
     }
 }
 

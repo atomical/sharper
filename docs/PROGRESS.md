@@ -90,3 +90,10 @@ This log is append-only. Every entry includes an ISO-8601 timestamp with timezon
     - `tools/coreml/bench_coreml.py` → `artifacts/benches/bench_coreml.json`
     - Swift bench → `artifacts/benches/bench_swift.json`
   - Fixed `make validate` stability by defaulting PyTorch reference inference to CPU (`tools/export/ref_infer.py --device cpu`) to avoid MPS nondeterminism causing parity failures on the `low_light` fixture.
+
+## 2026-01-04T14:30:15-06:00
+- Added an iOS demo app for end-to-end Apple-platform usage:
+  - New SwiftUI app sources under `Swift/SharpDemoApp/App/` (file picker for `.mlpackage` + image; runs `predict` and can render a single orbit frame).
+  - Added and checked in `Swift/SharpDemoApp/SharpDemoAppUI.xcodeproj` plus `Swift/SharpDemoApp/project.yml` (XcodeGen spec used to generate the project).
+  - Fixed `Swift/SharpCoreML/Sources/SharpCoreML/Shaders/SharpPostprocess.metal` to avoid Metal C++ lambdas (Xcode’s iOS Metal compiler rejects them).
+  - Verified iOS Simulator build succeeds via `xcodebuild -project Swift/SharpDemoApp/SharpDemoAppUI.xcodeproj -scheme SharpDemoAppUI -destination 'generic/platform=iOS Simulator' build`.
