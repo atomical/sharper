@@ -25,6 +25,14 @@ public struct SharpPrediction {
     public let metadata: SharpInputMetadata
     public let raw: SharpRawOutputs
     public let postprocessed: SharpPostprocessedGaussians
+    public let timings: SharpTimings?
+
+    public init(metadata: SharpInputMetadata, raw: SharpRawOutputs, postprocessed: SharpPostprocessedGaussians, timings: SharpTimings? = nil) {
+        self.metadata = metadata
+        self.raw = raw
+        self.postprocessed = postprocessed
+        self.timings = timings
+    }
 }
 
 public final class SharpCoreMLRunner {
@@ -66,6 +74,9 @@ public final class SharpCoreMLRunner {
     }
 
     public func predict(imageURL: URL) throws -> SharpPrediction {
+        let t0 = CFAbsoluteTimeGetCurrent()
+
+        let tPre0 = CFAbsoluteTimeGetCurrent()
         let cgImage = try SharpPreprocessor.loadCGImage(from: imageURL)
         let metadata = SharpPreprocessor.loadMetadata(
             from: imageURL,
@@ -73,12 +84,15 @@ public final class SharpCoreMLRunner {
             imageHeight: cgImage.height
         )
         let (image, disparity) = try SharpPreprocessor.makeInputs(cgImage: cgImage, metadata: metadata)
+        let tPre1 = CFAbsoluteTimeGetCurrent()
 
         let provider = try MLDictionaryFeatureProvider(dictionary: [
             "image": MLFeatureValue(multiArray: image),
             "disparity_factor": MLFeatureValue(multiArray: disparity),
         ])
+        let tInf0 = CFAbsoluteTimeGetCurrent()
         let features = try model.prediction(from: provider)
+        let tInf1 = CFAbsoluteTimeGetCurrent()
 
         func get(_ name: String) throws -> MLMultiArray {
             guard let v = features.featureValue(for: name) else { throw SharpCoreMLError.missingOutput(name) }
@@ -92,7 +106,7 @@ public final class SharpCoreMLRunner {
         let colorsPre = try get("colors_linear_pre")
         let opacitiesPre = try get("opacities_pre")
 
-        let post = try unproject(meanPre: meanPre, quatPre: quatPre, scalePre: scalePre, metadata: metadata)
+        let (post, unprojectTiming) = try unproject(meanPre: meanPre, quatPre: quatPre, scalePre: scalePre, metadata: metadata)
 
         let raw = SharpRawOutputs(
             meanVectorsPre: meanPre,
@@ -101,7 +115,16 @@ public final class SharpCoreMLRunner {
             colorsLinearPre: colorsPre,
             opacitiesPre: opacitiesPre
         )
-        return SharpPrediction(metadata: metadata, raw: raw, postprocessed: post)
+        let t1 = CFAbsoluteTimeGetCurrent()
+        let timings = SharpTimings(
+            preprocessSec: tPre1 - tPre0,
+            coremlSec: tInf1 - tInf0,
+            postprocessSec: unprojectTiming.totalSec,
+            postprocessCopySec: unprojectTiming.copySec,
+            postprocessKernelSec: unprojectTiming.kernelSec,
+            totalSec: t1 - t0
+        )
+        return SharpPrediction(metadata: metadata, raw: raw, postprocessed: post, timings: timings)
     }
 
     private struct UnprojectParams {
@@ -111,12 +134,19 @@ public final class SharpCoreMLRunner {
         var _pad: UInt32 = 0
     }
 
+    private struct UnprojectTiming {
+        var copySec: Double
+        var kernelSec: Double
+        var totalSec: Double
+    }
+
     private func unproject(
         meanPre: MLMultiArray,
         quatPre: MLMultiArray,
         scalePre: MLMultiArray,
         metadata: SharpInputMetadata
-    ) throws -> SharpPostprocessedGaussians {
+    ) throws -> (SharpPostprocessedGaussians, UnprojectTiming) {
+        let t0 = CFAbsoluteTimeGetCurrent()
         let count = meanPre.shape[1].intValue
 
         // Inputs are contiguous float32; copy into shared buffers for simplicity.
@@ -124,6 +154,7 @@ public final class SharpCoreMLRunner {
         let quatBytes = count * 4 * MemoryLayout<Float>.size
         let scaleBytes = count * 3 * MemoryLayout<Float>.size
 
+        let tCopy0 = CFAbsoluteTimeGetCurrent()
         guard let meanIn = device.makeBuffer(bytes: meanPre.dataPointer, length: meanBytes, options: .storageModeShared),
               let quatIn = device.makeBuffer(bytes: quatPre.dataPointer, length: quatBytes, options: .storageModeShared),
               let scaleIn = device.makeBuffer(bytes: scalePre.dataPointer, length: scaleBytes, options: .storageModeShared)
@@ -137,6 +168,7 @@ public final class SharpCoreMLRunner {
         else {
             throw SharpCoreMLError.metalBufferCreateFailed
         }
+        let tCopy1 = CFAbsoluteTimeGetCurrent()
 
         var params = UnprojectParams(sx: metadata.sx, sy: metadata.sy, count: UInt32(count))
         guard let paramsBuf = device.makeBuffer(bytes: &params, length: MemoryLayout<UnprojectParams>.stride, options: .storageModeShared) else {
@@ -149,6 +181,7 @@ public final class SharpCoreMLRunner {
             throw SharpCoreMLError.metalPipelineCreateFailed
         }
 
+        let tKernel0 = CFAbsoluteTimeGetCurrent()
         enc.setComputePipelineState(pipeline)
         enc.setBuffer(meanIn, offset: 0, index: 0)
         enc.setBuffer(quatIn, offset: 0, index: 1)
@@ -166,7 +199,12 @@ public final class SharpCoreMLRunner {
 
         cmd.commit()
         cmd.waitUntilCompleted()
+        let tKernel1 = CFAbsoluteTimeGetCurrent()
 
-        return SharpPostprocessedGaussians(count: count, mean: meanOut, quaternions: quatOut, singularValues: scaleOut)
+        let t1 = CFAbsoluteTimeGetCurrent()
+        return (
+            SharpPostprocessedGaussians(count: count, mean: meanOut, quaternions: quatOut, singularValues: scaleOut),
+            UnprojectTiming(copySec: tCopy1 - tCopy0, kernelSec: tKernel1 - tKernel0, totalSec: t1 - t0)
+        )
     }
 }

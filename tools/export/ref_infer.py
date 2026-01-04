@@ -109,7 +109,12 @@ def main() -> int:
     p.add_argument("--out-root", type=Path, help="Output root folder for --fixtures mode.")
     p.add_argument("--checkpoint-path", type=Path, default=None, help="Optional local .pt checkpoint.")
     p.add_argument("--model-url", type=str, default=DEFAULT_MODEL_URL, help="Checkpoint URL (default: official).")
-    p.add_argument("--device", type=str, default="default", help="['cpu','mps','cuda','default']")
+    p.add_argument(
+        "--device",
+        type=str,
+        default="cpu",
+        help="Inference device (default: cpu for determinism). One of: ['cpu','mps','cuda','default']",
+    )
     p.add_argument("--seed", type=int, default=0, help="RNG seed.")
     p.add_argument(
         "--dump-intermediates",

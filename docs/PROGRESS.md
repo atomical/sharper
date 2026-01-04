@@ -81,3 +81,12 @@ This log is append-only. Every entry includes an ISO-8601 timestamp with timezon
     - `Swift/SharpCoreML/Sources/SharpCoreML/MetalLibrary_SharpPostprocess.swift`
   - Added generator `tools/metal/embed_metallib.py` (compiles `.metal` for `macosx`/`iphoneos`/`iphonesimulator` and selects at compile time).
   - Updated `Makefile` Swift targets to run `swift package clean` before building to avoid stale source lists after adding new files.
+
+## 2026-01-04T14:13:30-06:00
+- Phase 8 (benchmarks) + determinism improvements:
+  - Added per-stage timing instrumentation to `SharpCoreMLRunner.predict` via `SharpTimings` (preprocess/CoreML/postprocess, plus postprocess copy/kernel split).
+  - Added a `--bench-out <json>` mode to `Swift/SharpDemoApp` to emit a machine-readable benchmark report including render FPS and RSS memory peak.
+  - Updated `make bench` to run both:
+    - `tools/coreml/bench_coreml.py` → `artifacts/benches/bench_coreml.json`
+    - Swift bench → `artifacts/benches/bench_swift.json`
+  - Fixed `make validate` stability by defaulting PyTorch reference inference to CPU (`tools/export/ref_infer.py --device cpu`) to avoid MPS nondeterminism causing parity failures on the `low_light` fixture.

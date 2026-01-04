@@ -39,3 +39,28 @@ public struct SharpRawOutputs {
         self.opacitiesPre = opacitiesPre
     }
 }
+
+public struct SharpTimings: Codable, Sendable {
+    public let preprocessSec: Double
+    public let coremlSec: Double
+    public let postprocessSec: Double
+    public let postprocessCopySec: Double
+    public let postprocessKernelSec: Double
+    public let totalSec: Double
+
+    public init(
+        preprocessSec: Double,
+        coremlSec: Double,
+        postprocessSec: Double,
+        postprocessCopySec: Double,
+        postprocessKernelSec: Double,
+        totalSec: Double
+    ) {
+        self.preprocessSec = preprocessSec
+        self.coremlSec = coremlSec
+        self.postprocessSec = postprocessSec
+        self.postprocessCopySec = postprocessCopySec
+        self.postprocessKernelSec = postprocessKernelSec
+        self.totalSec = totalSec
+    }
+}

@@ -49,16 +49,16 @@ venv: ml-sharp $(VENV_STAMP)
 fixtures: venv
 	$(VENV_PY) tools/fixtures/generate_fixtures.py --out artifacts/fixtures/inputs
 
-ref: venv
+ref: venv fixtures
 	$(VENV_PY) tools/export/ref_infer.py --fixtures artifacts/fixtures/inputs --out-root artifacts/fixtures/ref
 
 export: venv
 	$(VENV_PY) tools/export/export_sharp.py
 
-coreml: venv
+coreml: venv export
 	$(VENV_PY) tools/coreml/convert_to_coreml.py
 
-validate: venv
+validate: venv fixtures ref coreml
 	$(VENV_PY) tools/coreml/validate_coreml.py --fixtures artifacts/fixtures/inputs --ref-root artifacts/fixtures/ref --coreml-root artifacts/fixtures/coreml
 
 validate-swift: venv ref coreml
@@ -86,8 +86,16 @@ demo: coreml fixtures
 		cd $(SWIFT_DEMO_DIR) && .build/release/SharpDemoApp ../../$(DEMO_IMAGE) ../../$(DEMO_OUT) --frames $(DEMO_FRAMES) --size $(DEMO_SIZE) --video ../../$(DEMO_OUT)/out.mp4 --fps $(DEMO_FPS); \
 	fi
 
-bench: venv
-	$(VENV_PY) tools/coreml/bench_coreml.py
+bench: venv coreml fixtures
+	$(VENV_PY) tools/coreml/bench_coreml.py --out artifacts/benches/bench_coreml.json
+	mkdir -p artifacts/benches artifacts/benches/swift_run
+	cd Swift/SharpDemoApp && swift package clean && swift build -c release
+	@if [ -n "$(TIMEOUT_BIN)" ]; then \
+		cd $(SWIFT_DEMO_DIR) && $(TIMEOUT_BIN) 600s .build/release/SharpDemoApp ../../$(DEMO_IMAGE) ../../artifacts/benches/swift_run --model ../../artifacts/Sharp.mlpackage --iters 5 --frames 60 --size $(DEMO_SIZE) --bench-out ../../artifacts/benches/bench_swift.json; \
+	else \
+		echo "warning: timeout not found; running swift bench without a watchdog"; \
+		cd $(SWIFT_DEMO_DIR) && .build/release/SharpDemoApp ../../$(DEMO_IMAGE) ../../artifacts/benches/swift_run --model ../../artifacts/Sharp.mlpackage --iters 5 --frames 60 --size $(DEMO_SIZE) --bench-out ../../artifacts/benches/bench_swift.json; \
+	fi
 
 clean:
 	rm -rf $(VENV_DIR) artifacts/fixtures/ref artifacts/fixtures/coreml artifacts/benches

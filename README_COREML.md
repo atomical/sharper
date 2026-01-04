@@ -42,7 +42,7 @@ Notes:
 - `make validate`: parity suite (PyTorch vs CoreML) (WIP)
 - `make validate-swift`: parity suite (Swift `scene.ply` vs PyTorch reference)
 - `make demo`: Swift demo CLI (image → PLY → frames + mp4)
-- `make bench`: benchmarks (WIP)
+- `make bench`: benchmarks (writes `artifacts/benches/bench_coreml.json` + `artifacts/benches/bench_swift.json`)
 
 ## Key Docs
 
