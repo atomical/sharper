@@ -1,6 +1,6 @@
 SHELL := /bin/bash
 
-.PHONY: help venv fixtures ref export coreml coreml-fp16 validate validate-fp16 validate-swift demo bench clean
+.PHONY: help venv fixtures ref export coreml coreml-fp16 validate validate-fp16 validate-swift demo ios-build bench clean
 .PHONY: ml-sharp
 
 PYTHON ?= python3.11
@@ -27,6 +27,7 @@ help:
 	@echo "  validate-fp16 - parity tests: PyTorch vs CoreML (FP16)"
 	@echo "  validate-swift - parity tests: Swift PLY vs ref"
 	@echo "  demo      - build/run Swift demo (image→PLY→frames/video)"
+	@echo "  ios-build - build iOS SwiftUI demo app"
 	@echo "  bench     - run CoreML benchmark harness"
 
 $(VENV_PY):
@@ -94,6 +95,12 @@ demo: coreml fixtures
 		echo "warning: timeout not found; running demo without a watchdog"; \
 		cd $(SWIFT_DEMO_DIR) && .build/release/SharpDemoApp ../../$(DEMO_IMAGE) ../../$(DEMO_OUT) --frames $(DEMO_FRAMES) --size $(DEMO_SIZE) --video ../../$(DEMO_OUT)/out.mp4 --fps $(DEMO_FPS); \
 	fi
+
+IOS_PROJECT := Swift/SharpDemoApp/SharpDemoAppUI.xcodeproj
+IOS_SCHEME := SharpDemoAppUI
+
+ios-build:
+	xcodebuild -project "$(IOS_PROJECT)" -scheme "$(IOS_SCHEME)" -destination "generic/platform=iOS Simulator" -configuration Debug build
 
 bench: venv coreml fixtures
 	$(VENV_PY) tools/coreml/bench_coreml.py --out artifacts/benches/bench_coreml.json

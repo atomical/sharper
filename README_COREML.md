@@ -44,6 +44,7 @@ Notes:
 - `make validate-fp16`: best-effort parity report for FP16 model (expected to diverge from FP32 ref)
 - `make validate-swift`: parity suite (Swift `scene.ply` vs PyTorch reference)
 - `make demo`: Swift demo CLI (image → PLY → frames + mp4)
+- `make ios-build`: build the iOS SwiftUI demo app (Xcode required)
 - `make bench`: benchmarks (writes `artifacts/benches/bench_coreml.json` + `artifacts/benches/bench_swift.json`)
 
 ## iOS / visionOS Demo App

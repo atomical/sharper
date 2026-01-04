@@ -103,3 +103,6 @@ This log is append-only. Every entry includes an ISO-8601 timestamp with timezon
   - Added `make coreml-fp16` to produce `artifacts/Sharp_fp16.mlpackage`.
   - Attempted FP16 parity against the FP32 PyTorch reference; observed large numeric divergence (especially `opacities_pre`), so FP16 is currently marked best-effort and FP32 remains the validated model.
   - Parity report is written to `artifacts/fixtures/coreml_fp16/parity_report.md` via `make validate-fp16`.
+
+## 2026-01-04T14:46:15-06:00
+- Added `make ios-build` to build the iOS SwiftUI demo app (`Swift/SharpDemoApp/SharpDemoAppUI.xcodeproj`) via `xcodebuild` for CI-style smoke checks.
