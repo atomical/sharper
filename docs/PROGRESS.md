@@ -150,3 +150,8 @@ This log is append-only. Every entry includes an ISO-8601 timestamp with timezon
 - Added a SwiftPM “one command” demo for macOS:
   - New executable target `SharpQuickDemo` under `Swift/SharpDemoApp` (run via `swift run -c release SharpQuickDemo`).
   - Default behavior: load `artifacts/Sharp.mlpackage` + `artifacts/fixtures/inputs/indoor_teaser.jpg`, write `scene.ply`, `preview.png`, and `out.mp4` to `artifacts/fixtures/coreml/quick_demo/`.
+
+## 2026-01-04T19:07:29-06:00
+- Ran macOS smoke checks (local):
+  - `swift run -c release SharpQuickDemo --frames 2 --size 256x256` produced `scene.ply`, `preview.png`, and `out.mp4` under `artifacts/fixtures/coreml/quick_demo/`.
+  - `make macos-build` succeeded for `SharpDemoAppMac` (Xcode project build).
