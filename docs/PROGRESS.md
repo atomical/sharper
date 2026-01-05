@@ -162,3 +162,6 @@ This log is append-only. Every entry includes an ISO-8601 timestamp with timezon
 ## 2026-01-04T19:22:44-06:00
 - Added Swift integration documentation for consumers:
   - New guide: `docs/swift_integration.md` (SwiftPM + Xcode integration, model packaging, inference, PLY export, Metal rendering, MP4 export, troubleshooting).
+
+## 2026-01-04T19:24:16-06:00
+- Expanded `docs/swift_integration.md` with a “Raw CoreML usage (manual inference)” section (for integrating with precompiled `.mlmodelc` workflows).

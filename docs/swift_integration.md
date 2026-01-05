@@ -145,8 +145,57 @@ This produces a `Sharp.mlmodelc/` directory. You can bundle that and load it wit
 
 This repo’s `SharpCoreMLRunner` currently calls `MLModel.compileModel(at:)` internally, so it expects the *uncompiled* `.mlpackage` by default. If you prefer `.mlmodelc`, you can either:
 
-- Load the compiled model yourself and run inference directly (see the “Raw CoreML usage” snippet below), or
+- Load the compiled model yourself and run inference directly (see “Raw CoreML usage (manual inference)” below), or
 - Adjust `SharpCoreMLRunner` in your fork to accept a compiled URL.
+
+### Raw CoreML usage (manual inference)
+
+If you want full control (e.g., to load a precompiled `.mlmodelc`), you can bypass `SharpCoreMLRunner` and call CoreML directly.
+
+This is also useful if you want to integrate into an existing CoreML pipeline that already manages models/configs.
+
+```swift
+import CoreML
+import Foundation
+import SharpCoreML
+
+// 1) Load a compiled model (.mlmodelc) or compile a .mlpackage.
+let config = MLModelConfiguration()
+config.computeUnits = .all
+
+let model = try MLModel(contentsOf: compiledModelURL, configuration: config)
+
+// 2) Preprocess (exactly matches docs/io_contract.md).
+let cgImage = try SharpPreprocessor.loadCGImage(from: imageURL)
+let metadata = SharpPreprocessor.loadMetadata(from: imageURL, imageWidth: cgImage.width, imageHeight: cgImage.height)
+let (image, disparity) = try SharpPreprocessor.makeInputs(cgImage: cgImage, metadata: metadata)
+
+let provider = try MLDictionaryFeatureProvider(dictionary: [
+  "image": MLFeatureValue(multiArray: image),
+  "disparity_factor": MLFeatureValue(multiArray: disparity),
+])
+
+// 3) Run the model.
+let features = try model.prediction(from: provider)
+
+func out(_ name: String) throws -> MLMultiArray {
+  guard let v = features.featureValue(for: name)?.multiArrayValue else {
+    throw NSError(domain: "SharpManual", code: 1, userInfo: [NSLocalizedDescriptionKey: "Missing output \(name)"])
+  }
+  return v
+}
+
+let meanPre = try out("mean_vectors_pre")        // [1,N,3]
+let quatPre = try out("quaternions_pre")         // [1,N,4]
+let scalePre = try out("singular_values_pre")    // [1,N,3]
+let colorsPre = try out("colors_linear_pre")     // [1,N,3]
+let opacitiesPre = try out("opacities_pre")      // [1,N]
+```
+
+Important:
+
+- These outputs are **pre-unprojection** tensors. To match `sharp predict` PLY semantics you must still apply the unprojection/re-decomposition described in `docs/io_contract.md`.
+- `SharpCoreMLRunner` already performs that postprocess via Metal and returns PLY-ready gaussians (`prediction.postprocessed`), so prefer it unless you need custom model lifecycle management.
 
 ## 4) Minimal integration: image → prediction → `.ply`
 
@@ -312,4 +361,3 @@ Use these as “copy-paste-ready” integration examples:
 - Full CLI (predict + render-only + bench): `Swift/SharpDemoApp/Sources/SharpDemoApp/SharpDemoApp.swift`
 - Swift runner API: `Swift/SharpCoreML/Sources/SharpCoreML/SharpCoreMLRunner.swift`
 - Renderer API: `Swift/GaussianSplatMetalRenderer/Sources/GaussianSplatMetalRenderer/GaussianSplatRenderer.swift`
-
