@@ -203,3 +203,6 @@ This log is append-only. Every entry includes an ISO-8601 timestamp with timezon
   - Fixed end-to-end colorspace handling for `.ply` load + renderer output (linear blend → sRGB output).
   - Matched ml-sharp camera details: `get_screen_resolution_px_from_input`, principal point `(W-1)/2`, and `lookat_mode` (`point`/`ahead`).
   - Exposed flags in `SharpDemoApp` / `SharpQuickDemo` and updated `docs/swift_integration.md`.
+
+## 2026-01-05T09:01:01-06:00
+- Added a “less fog” render preset example command to `README_COREML.md`.

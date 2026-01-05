@@ -58,6 +58,7 @@ Notes:
 ## Swift Quickstart (`SharpQuickDemo`)
 
 - One-command demo (image → PLY + mp4 + preview): `cd Swift/SharpDemoApp && swift run -c release SharpQuickDemo`
+- Higher-quality / less-fog render preset (useful for real photos): `swift run --package-path Swift/SharpDemoApp -c release SharpQuickDemo --image artifacts/fixtures/inputs/IMG_6221_heic.heic --out artifacts/fixtures/coreml/quick_demo_IMG_6221_heic_lessfog --frames 60 --size 512x682 --compositing bins:256 --opacity-threshold 0.01 --near-clip 0.05 --render-scale 2 --tonemap aces`
 
 ## GUI Demo App (macOS/iOS/visionOS)
 
