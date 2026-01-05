@@ -18,7 +18,13 @@ let package = Package(
                 "SharpCoreML",
                 "GaussianSplatMetalRenderer",
             ]
+        ),
+        .executableTarget(
+            name: "SharpQuickDemo",
+            dependencies: [
+                "SharpCoreML",
+                "GaussianSplatMetalRenderer",
+            ]
         )
     ]
 )
-

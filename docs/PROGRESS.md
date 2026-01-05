@@ -145,3 +145,8 @@ This log is append-only. Every entry includes an ISO-8601 timestamp with timezon
   - Added a macOS SwiftUI demo app target `SharpDemoAppMac` to `Swift/SharpDemoApp/SharpDemoAppUI.xcodeproj` (via `Swift/SharpDemoApp/project.yml` + `xcodegen`).
   - Added `make macos-build` to smoke-build the macOS app with `xcodebuild`.
   - Fixed `Swift/SharpDemoApp/App/SceneDelegate.swift` to compile cross-platform (`UIKit` only when available).
+
+## 2026-01-04T18:48:58-06:00
+- Added a SwiftPM “one command” demo for macOS:
+  - New executable target `SharpQuickDemo` under `Swift/SharpDemoApp` (run via `swift run -c release SharpQuickDemo`).
+  - Default behavior: load `artifacts/Sharp.mlpackage` + `artifacts/fixtures/inputs/indoor_teaser.jpg`, write `scene.ply`, `preview.png`, and `out.mp4` to `artifacts/fixtures/coreml/quick_demo/`.

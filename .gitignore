@@ -33,4 +33,6 @@ Swift/**/.swiftpm/
 *.xcworkspace/
 # Keep the demo app Xcode project checked in.
 !Swift/SharpDemoApp/SharpDemoAppUI.xcodeproj/
+# But ignore user-specific Xcode state inside it.
+Swift/SharpDemoApp/SharpDemoAppUI.xcodeproj/xcuserdata/
 DerivedData/

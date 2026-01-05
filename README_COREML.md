@@ -54,6 +54,10 @@ Notes:
 - Predict (image → `scene.ply` and optional render): `cd Swift/SharpDemoApp && swift run -c release SharpDemoApp predict ../../artifacts/fixtures/inputs/indoor_teaser.jpg ../../artifacts/fixtures/coreml/demo --frames 60 --video ../../artifacts/fixtures/coreml/demo/out.mp4`
 - Render-only (PLY → frames/video): `cd Swift/SharpDemoApp && swift run -c release SharpDemoApp render ../../artifacts/fixtures/coreml/demo/scene.ply ../../artifacts/fixtures/coreml/render_only --frames 60 --video ../../artifacts/fixtures/coreml/render_only/out.mp4`
 
+## Swift Quickstart (`SharpQuickDemo`)
+
+- One-command demo (image → PLY + mp4 + preview): `cd Swift/SharpDemoApp && swift run -c release SharpQuickDemo`
+
 ## GUI Demo App (macOS/iOS/visionOS)
 
 - Open `Swift/SharpDemoApp/SharpDemoAppUI.xcodeproj` in Xcode.
