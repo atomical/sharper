@@ -29,9 +29,30 @@ private struct Args {
     var frames: Int = 60
     var width: Int = 512
     var height: Int = 512
+    var mlsharpSize: Bool = false
     var fps: Int = 30
     var computeUnits: MLComputeUnits = .all
     var render: Bool = true
+
+    // Renderer quality controls.
+    var renderScale: Float = 1.0
+    var compositing: GaussianSplatCompositingMode = .weightedOIT
+    var toneMap: GaussianSplatToneMap = .none
+    var exposureEV: Float = 0.0
+    var saturation: Float = 1.0
+    var contrast: Float = 1.0
+    var debugView: GaussianSplatDebugView = .none
+
+    var nearClipZ: Float = 1e-2
+    var opacityThreshold: Float = 0.0
+    var lowPassEps2D: Float = 0.0
+    var minRadiusPx: Float = 1.0
+    var maxRadiusPx: Float = 160.0
+
+    var normalization: GaussianSplatSceneNormalization = .none
+    var normalizationScale: GaussianSplatSceneScale = .none
+
+    var lookAtMode: MLSharpTrajectoryParams.LookAtMode = .point
 }
 
 private func fileExists(_ url: URL) -> Bool {
@@ -88,6 +109,95 @@ private func parseArgs() throws -> Args {
             guard parts.count == 2, let w = Int(parts[0]), let h = Int(parts[1]), w > 0, h > 0 else { throw QuickDemoError.invalidSize(String(v)) }
             args.width = w
             args.height = h
+        case "--mlsharp-size":
+            args.mlsharpSize = true
+        case "--render-scale":
+            guard let v = argv.first, let s = Float(v) else { throw QuickDemoError.invalidSize("--render-scale") }
+            argv = argv.dropFirst()
+            args.renderScale = s
+        case "--compositing":
+            guard let v = argv.first else { throw QuickDemoError.invalidSize("--compositing") }
+            argv = argv.dropFirst()
+            if v == "oit" {
+                args.compositing = .weightedOIT
+            } else if v.hasPrefix("bins") {
+                var n = GaussianSplatCompositingMode.defaultDepthBinCount
+                if let idx = v.firstIndex(of: ":") {
+                    let tail = v[v.index(after: idx)...]
+                    if let parsed = Int(tail) { n = parsed }
+                }
+                args.compositing = .depthBinnedAlpha(binCount: n)
+            } else {
+                throw QuickDemoError.invalidSize("Unknown --compositing: \(v)")
+            }
+        case "--tonemap":
+            guard let v = argv.first, let tm = GaussianSplatToneMap(rawValue: String(v)) else { throw QuickDemoError.invalidSize("--tonemap") }
+            argv = argv.dropFirst()
+            args.toneMap = tm
+        case "--exposure-ev":
+            guard let v = argv.first, let ev = Float(v) else { throw QuickDemoError.invalidSize("--exposure-ev") }
+            argv = argv.dropFirst()
+            args.exposureEV = ev
+        case "--saturation":
+            guard let v = argv.first, let s = Float(v) else { throw QuickDemoError.invalidSize("--saturation") }
+            argv = argv.dropFirst()
+            args.saturation = s
+        case "--contrast":
+            guard let v = argv.first, let c = Float(v) else { throw QuickDemoError.invalidSize("--contrast") }
+            argv = argv.dropFirst()
+            args.contrast = c
+        case "--debug":
+            guard let v = argv.first, let dv = GaussianSplatDebugView(rawValue: String(v)) else { throw QuickDemoError.invalidSize("--debug") }
+            argv = argv.dropFirst()
+            args.debugView = dv
+        case "--near-clip":
+            guard let v = argv.first, let z = Float(v) else { throw QuickDemoError.invalidSize("--near-clip") }
+            argv = argv.dropFirst()
+            args.nearClipZ = z
+        case "--opacity-threshold":
+            guard let v = argv.first, let a = Float(v) else { throw QuickDemoError.invalidSize("--opacity-threshold") }
+            argv = argv.dropFirst()
+            args.opacityThreshold = a
+        case "--lowpass-eps2d":
+            guard let v = argv.first, let e = Float(v) else { throw QuickDemoError.invalidSize("--lowpass-eps2d") }
+            argv = argv.dropFirst()
+            args.lowPassEps2D = e
+        case "--min-radius":
+            guard let v = argv.first, let px = Float(v) else { throw QuickDemoError.invalidSize("--min-radius") }
+            argv = argv.dropFirst()
+            args.minRadiusPx = px
+        case "--max-radius":
+            guard let v = argv.first, let px = Float(v) else { throw QuickDemoError.invalidSize("--max-radius") }
+            argv = argv.dropFirst()
+            args.maxRadiusPx = px
+        case "--normalize":
+            guard let v = argv.first else { throw QuickDemoError.invalidSize("--normalize") }
+            argv = argv.dropFirst()
+            switch v {
+            case "none":
+                args.normalization = .none
+            case "recenter_xy":
+                args.normalization = .recenterXY
+            case "recenter_xyz":
+                args.normalization = .recenterXYZ
+            default:
+                throw QuickDemoError.invalidSize("Unknown --normalize: \(v)")
+            }
+        case "--normalize-scale":
+            guard let v = argv.first else { throw QuickDemoError.invalidSize("--normalize-scale") }
+            argv = argv.dropFirst()
+            switch v {
+            case "none":
+                args.normalizationScale = .none
+            case "unit_radius":
+                args.normalizationScale = .unitRadius
+            default:
+                throw QuickDemoError.invalidSize("Unknown --normalize-scale: \(v)")
+            }
+        case "--lookat":
+            guard let v = argv.first, let lm = MLSharpTrajectoryParams.LookAtMode(rawValue: String(v)) else { throw QuickDemoError.invalidSize("--lookat") }
+            argv = argv.dropFirst()
+            args.lookAtMode = lm
         case "--fps":
             guard let v = argv.first, let n = Int(v), n >= 1 else { throw QuickDemoError.invalidSize("--fps") }
             argv = argv.dropFirst()
@@ -121,8 +231,14 @@ private func parseArgs() throws -> Args {
 
                 Usage:
                   swift run -c release SharpQuickDemo [--model <mlpackage>] [--image <jpg/png>] [--out <dir>]
-                                                  [--frames N] [--size WxH] [--fps N]
+                                                  [--frames N] [--size WxH] [--mlsharp-size] [--fps N]
                                                   [--compute-units all|cpu_only|cpu_and_gpu|cpu_and_ne]
+                                                  [--render-scale S] [--compositing oit|bins[:N]]
+                                                  [--tonemap none|reinhard|aces] [--exposure-ev EV] [--saturation S] [--contrast C]
+                                                  [--debug none|alpha|depth|disparity|radius]
+                                                  [--near-clip Z] [--opacity-threshold A] [--lowpass-eps2d E] [--min-radius PX] [--max-radius PX]
+                                                  [--normalize none|recenter_xy|recenter_xyz] [--normalize-scale none|unit_radius]
+                                                  [--lookat point|ahead]
                                                   [--no-render]
                 """
             )
@@ -203,12 +319,25 @@ struct SharpQuickDemo {
 
             guard let device = MTLCreateSystemDefaultDevice() else { throw QuickDemoError.metalUnavailable }
             let scene = try buildScene(device: device, prediction: prediction)
+
+            var renderW = args.width
+            var renderH = args.height
+            if args.mlsharpSize {
+                let r = MLSharpTrajectory.screenResolutionPxFromInput(width: prediction.metadata.imageWidth, height: prediction.metadata.imageHeight)
+                renderW = r.width
+                renderH = r.height
+                log("Using ml-sharp screen resolution: \(renderW)x\(renderH)")
+            }
+            if renderW % 2 != 0 { renderW += 1 }
+            if renderH % 2 != 0 { renderH += 1 }
+
             var p = MLSharpTrajectoryParams()
             p.kind = .rotateForward
             p.numSteps = args.frames
+            p.lookAtMode = args.lookAtMode
             let fx0 = Float(prediction.metadata.focalLengthPx)
-            let cx0 = Float(prediction.metadata.imageWidth) * 0.5
-            let cy0 = Float(prediction.metadata.imageHeight) * 0.5
+            let cx0 = (Float(prediction.metadata.imageWidth) - 1) * 0.5
+            let cy0 = (Float(prediction.metadata.imageHeight) - 1) * 0.5
             let (cameras, depth) = MLSharpTrajectory.makeCameras(
                 scene: scene,
                 sourceImageWidth: prediction.metadata.imageWidth,
@@ -217,22 +346,39 @@ struct SharpQuickDemo {
                 intrinsicFy: fx0,
                 intrinsicCx: cx0,
                 intrinsicCy: cy0,
-                renderWidth: args.width,
-                renderHeight: args.height,
+                renderWidth: renderW,
+                renderHeight: renderH,
                 params: p
             )
             log("Depth quantiles (m): min≈\(String(format: "%.3f", depth.min)) focus≈\(String(format: "%.3f", depth.focus)) max≈\(String(format: "%.3f", depth.max))")
 
             let renderer = try GaussianSplatRenderer(device: device)
             let videoURL = args.outDir.appendingPathComponent("out.mp4")
-            let videoWriter = try MP4VideoWriter(url: videoURL, width: args.width, height: args.height, fps: args.fps)
+            let videoWriter = try MP4VideoWriter(url: videoURL, width: renderW, height: renderH, fps: args.fps)
+
+            var renderOptions = GaussianSplatRenderOptions()
+            renderOptions.compositing = args.compositing
+            renderOptions.renderScale = args.renderScale
+            renderOptions.toneMap = args.toneMap
+            renderOptions.exposureEV = args.exposureEV
+            renderOptions.saturation = args.saturation
+            renderOptions.contrast = args.contrast
+            renderOptions.debugView = args.debugView
+            renderOptions.debugDepthRange = SIMD2<Float>(depth.min, depth.max)
+            renderOptions.nearClipZ = args.nearClipZ
+            renderOptions.opacityThreshold = args.opacityThreshold
+            renderOptions.lowPassEps2D = args.lowPassEps2D
+            renderOptions.minRadiusPx = args.minRadiusPx
+            renderOptions.maxRadiusPx = args.maxRadiusPx
+            renderOptions.normalization = args.normalization
+            renderOptions.normalizationScale = args.normalizationScale
 
             var preview: CGImage? = nil
             for t in 0..<cameras.count {
-                if t == 0 { log("Rendering \(cameras.count) frames (\(args.width)x\(args.height)) → \(videoURL.lastPathComponent)…") }
+                if t == 0 { log("Rendering \(cameras.count) frames (\(renderW)x\(renderH)) → \(videoURL.lastPathComponent)…") }
                 let cam = cameras[t]
 
-                let img = try renderer.renderToCGImage(scene: scene, camera: cam, width: args.width, height: args.height)
+                let img = try renderer.renderToCGImage(scene: scene, camera: cam, width: renderW, height: renderH, options: renderOptions)
                 if preview == nil { preview = img }
                 try videoWriter.append(img)
             }

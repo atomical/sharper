@@ -281,26 +281,49 @@ let scene = GaussianScene(
 let renderer = try GaussianSplatRenderer(device: device)
 
 // Camera intrinsics derived from the prediction metadata.
+//
+// For ml-sharp parity, use principal point (W-1)/2, (H-1)/2 (matches upstream render CLI).
 let outW = 512
 let outH = 512
-let fx = prediction.metadata.focalLengthPx * Float(outW) / Float(prediction.metadata.imageWidth)
-let fy = prediction.metadata.focalLengthPx * Float(outH) / Float(prediction.metadata.imageHeight)
-let cx = Float(outW) * 0.5
-let cy = Float(outH) * 0.5
+let fx0 = Float(prediction.metadata.focalLengthPx)
+let fy0 = Float(prediction.metadata.focalLengthPx)
+let cx0 = (Float(prediction.metadata.imageWidth) - 1) * 0.5
+let cy0 = (Float(prediction.metadata.imageHeight) - 1) * 0.5
 
-// Orbit camera around scene bounds (simple default).
-let (center, radius) = (SIMD3<Float>(0, 0, 0), Float(1.5)) // replace with your bounds
-let eye = center + SIMD3<Float>(0, 0, radius)
-let view = PinholeCamera.lookAt(eye: eye, target: center)
-let cam = PinholeCamera(viewMatrix: view, fx: fx, fy: fy, cx: cx, cy: cy)
+// Generate a ml-sharp-like trajectory (robust to depth outliers).
+var traj = MLSharpTrajectoryParams()
+traj.kind = .rotateForward
+traj.numSteps = 60
+traj.lookAtMode = .point
 
-let cgImage = try renderer.renderToCGImage(scene: scene, camera: cam, width: outW, height: outH)
+let (cameras, depth) = MLSharpTrajectory.makeCameras(
+  scene: scene,
+  sourceImageWidth: prediction.metadata.imageWidth,
+  sourceImageHeight: prediction.metadata.imageHeight,
+  intrinsicFx: fx0,
+  intrinsicFy: fy0,
+  intrinsicCx: cx0,
+  intrinsicCy: cy0,
+  renderWidth: outW,
+  renderHeight: outH,
+  params: traj
+)
+
+// Optional: quality controls.
+var opts = GaussianSplatRenderOptions()
+opts.debugDepthRange = SIMD2<Float>(depth.min, depth.max) // used by depth/disparity debug and depth bins
+opts.renderScale = 1.0                                   // SSAA if > 1
+opts.compositing = .weightedOIT                           // or: .depthBinnedAlpha(binCount: 128)
+opts.toneMap = .none                                      // or: .aces
+opts.exposureEV = 0.0
+
+let cgImage = try renderer.renderToCGImage(scene: scene, camera: cameras[0], width: outW, height: outH, options: opts)
 ```
 
 Notes:
 
 - The renderer assumes an OpenCV-like camera convention and uses an `up` vector of `(0, -1, 0)` in `PinholeCamera.lookAt(...)` to keep “image up” consistent with y-down image coordinates.
-- The renderer uses weighted blended OIT (no per-frame sorting). It’s stable and fast, but may differ slightly from CUDA renderers that do full sorting.
+- The renderer defaults to weighted blended OIT (no per-frame sorting). It’s stable and fast, but can show “OIT halos” on dense scenes; see “Render quality controls” below for alternatives.
 
 ### 5.2 Render from `.ply`
 
@@ -320,6 +343,46 @@ If you want to use the `.ply`’s intrinsics rather than recomputing them, use:
 ```swift
 let (scene, meta) = try PLYLoader.loadMLSharpCompatiblePLYWithMetadata(url: plyURL, device: device)
 ```
+
+### 5.3 Render quality controls (recommended knobs)
+
+`GaussianSplatRenderOptions` lets you trade quality/perf and debug common failure modes.
+
+Core controls:
+
+- `compositing`:
+  - `.weightedOIT` (default): fast + deterministic, but approximate.
+  - `.depthBinnedAlpha(binCount:)`: coarse back-to-front compositing; reduces OIT halos but costs more GPU work and may be slightly nondeterministic (atomics).
+- `renderScale` (SSAA): render at `scale * WxH` then downsample. Typical values: `1.0`, `1.5`, `2.0`.
+
+Scene/camera controls:
+
+- `nearClipZ`: culls splats at or behind the camera. If you see huge blobs, raise this (e.g. `0.05`).
+- `opacityThreshold`: skip very transparent gaussians (helps speed + reduces haze). Try `0.005`–`0.02`.
+- `minRadiusPx` / `maxRadiusPx`: clamp splat footprints; reducing `maxRadiusPx` can reduce “flash” artifacts from outliers.
+- `lowPassEps2D`: adds a small value to the 2D covariance diagonal (a low-pass filter). This can reduce aliasing/flicker.
+
+Tone mapping:
+
+- `toneMap`: `none`, `reinhard`, `aces`
+- `exposureEV`: exposure in EV stops (`+1` doubles brightness, `-1` halves).
+- `saturation`, `contrast`: linear-space image controls.
+
+Debug views (`debugView`):
+
+- `alpha`: see coverage/opacity.
+- `depth`: grayscale depth (requires `debugDepthRange` or uses scene quantiles).
+- `disparity`: inverse-depth view.
+- `radius`: footprint visualization.
+
+Visualization-only normalization:
+
+- `normalization`:
+  - `.recenterXY` / `.recenterXYZ` subtracts a robust median center.
+- `normalizationScale`:
+  - `.unitRadius` scales the scene so a robust radius becomes ~1.
+
+These are for rendering/framing only; they do not change the `.ply` you export.
 
 ## 6) MP4 export
 

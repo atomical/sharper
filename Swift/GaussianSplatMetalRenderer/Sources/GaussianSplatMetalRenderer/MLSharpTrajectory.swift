@@ -9,7 +9,13 @@ public struct MLSharpTrajectoryParams {
         case shake = "shake"
     }
 
+    public enum LookAtMode: String, CaseIterable {
+        case point
+        case ahead
+    }
+
     public var kind: Kind = .rotateForward
+    public var lookAtMode: LookAtMode = .point
     public var maxDisparity: Float = 0.08
     public var maxZoom: Float = 0.15
     public var distanceM: Float = 0.0
@@ -37,6 +43,19 @@ public struct MLSharpDepthRange {
 }
 
 public enum MLSharpTrajectory {
+    /// Match `sharp.utils.camera.get_screen_resolution_px_from_input`.
+    public static func screenResolutionPxFromInput(width: Int, height: Int) -> (width: Int, height: Int) {
+        var w = max(width, 1)
+        var h = max(height, 1)
+        if h > 3000 {
+            w = max(1, w / 2)
+            h = max(1, h / 2)
+        }
+        if w % 2 != 0 { w += 1 }
+        if h % 2 != 0 { h += 1 }
+        return (w, h)
+    }
+
     public static func depthQuantiles(
         scene: GaussianScene,
         sampleCount: Int = 65536,
@@ -128,7 +147,8 @@ public enum MLSharpTrajectory {
         intrinsicCy: Float,
         renderWidth: Int,
         renderHeight: Int,
-        params: MLSharpTrajectoryParams = MLSharpTrajectoryParams()
+        params: MLSharpTrajectoryParams = MLSharpTrajectoryParams(),
+        baseViewMatrix: simd_float4x4 = matrix_identity_float4x4
     ) -> (cameras: [PinholeCamera], depth: MLSharpDepthRange) {
         let depth = depthQuantiles(
             scene: scene,
@@ -192,8 +212,9 @@ public enum MLSharpTrajectory {
                 eye = SIMD3<Float>(maxLateral * sin(ang), 0, params.distanceM + maxMedial * (1.0 - cos(ang)) * 0.5)
             }
 
-            let target = SIMD3<Float>(0, 0, focusDepth)
-            let view = PinholeCamera.lookAt(eye: eye, target: target, up: worldUp)
+            let origin: SIMD3<Float> = (params.lookAtMode == .ahead) ? eye : SIMD3<Float>(0, 0, 0)
+            let target = origin + SIMD3<Float>(0, 0, focusDepth)
+            let view = PinholeCamera.lookAt(eye: eye, target: target, up: worldUp) * baseViewMatrix
             cameras.append(PinholeCamera(viewMatrix: view, fx: scaled.fx, fy: scaled.fy, cx: scaled.cx, cy: scaled.cy))
         }
 

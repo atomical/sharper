@@ -124,7 +124,8 @@ public struct PLYLoader {
         var means = [Float](repeating: 0, count: n * 3)
         var quaternions = [Float](repeating: 0, count: n * 4)
         var scales = [Float](repeating: 0, count: n * 3)
-        var colorsLinear = [Float](repeating: 0, count: n * 3)
+        // Stored as (0..1) in the PLY's declared colorspace; converted to linearRGB later if needed.
+        var colors01 = [Float](repeating: 0, count: n * 3)
         var opacities = [Float](repeating: 0, count: n)
 
         let coeff = Float((1.0 / (4.0 * Double.pi)).squareRoot())
@@ -183,9 +184,9 @@ public struct PLYLoader {
                 let gSRGB = fdc1 * coeff + 0.5
                 let bSRGB = fdc2 * coeff + 0.5
 
-                colorsLinear[i * 3 + 0] = sRGBToLinear(rSRGB)
-                colorsLinear[i * 3 + 1] = sRGBToLinear(gSRGB)
-                colorsLinear[i * 3 + 2] = sRGBToLinear(bSRGB)
+                colors01[i * 3 + 0] = rSRGB
+                colors01[i * 3 + 1] = gSRGB
+                colors01[i * 3 + 2] = bSRGB
 
                 opacities[i] = sigmoid(opacityLogit)
             }
@@ -298,10 +299,18 @@ public struct PLYLoader {
             }
         }
 
+        // Respect the PLY's declared colorspace (ml-sharp exports sRGB for compatibility).
+        let isLinear = (metadata?.colorSpace == 1)
+        if !isLinear {
+            for i in 0..<(n * 3) {
+                colors01[i] = sRGBToLinear(colors01[i])
+            }
+        }
+
         guard let meansBuf = device.makeBuffer(bytes: means, length: means.count * 4, options: .storageModeShared),
               let quatBuf = device.makeBuffer(bytes: quaternions, length: quaternions.count * 4, options: .storageModeShared),
               let scalesBuf = device.makeBuffer(bytes: scales, length: scales.count * 4, options: .storageModeShared),
-              let colorsBuf = device.makeBuffer(bytes: colorsLinear, length: colorsLinear.count * 4, options: .storageModeShared),
+              let colorsBuf = device.makeBuffer(bytes: colors01, length: colors01.count * 4, options: .storageModeShared),
               let opaBuf = device.makeBuffer(bytes: opacities, length: opacities.count * 4, options: .storageModeShared)
         else {
             throw PLYLoadError.metalBufferCreateFailed

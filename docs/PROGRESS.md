@@ -193,3 +193,13 @@ This log is append-only. Every entry includes an ISO-8601 timestamp with timezon
   - Verified a single-frame render now matches the expected scene framing:
     - `swift run --package-path Swift/SharpDemoApp -c release SharpDemoApp render artifacts/fixtures/ref/IMG_6221_heic/scene.ply artifacts/fixtures/coreml/render_IMG_6221_heic_mlsharp --frames 1 --size 512x682`
     - Output frame: `artifacts/fixtures/coreml/render_IMG_6221_heic_mlsharp/frames/frame_0000.png`
+
+## 2026-01-04T22:07:17-06:00
+- Implemented renderer quality controls and ml-sharp parity knobs (macOS focus):
+  - Added `GaussianSplatRenderOptions` (compositing mode, SSAA, tonemap/exposure, debug views, culling, visualization normalization).
+  - Implemented depth-binned approximate sorting/compositing (`bins:N`) as an optional alternative to weighted OIT.
+  - Added SSAA via `renderScale` + linear downsample.
+  - Improved culling (near clip, offscreen, low opacity) and footprint controls (min/max radius, optional low-pass epsilon).
+  - Fixed end-to-end colorspace handling for `.ply` load + renderer output (linear blend → sRGB output).
+  - Matched ml-sharp camera details: `get_screen_resolution_px_from_input`, principal point `(W-1)/2`, and `lookat_mode` (`point`/`ahead`).
+  - Exposed flags in `SharpDemoApp` / `SharpQuickDemo` and updated `docs/swift_integration.md`.
