@@ -1,6 +1,6 @@
 SHELL := /bin/bash
 
-.PHONY: help venv fixtures ref export coreml coreml-fp16 validate validate-fp16 validate-swift demo macos-build ios-build visionos-build bench clean
+.PHONY: help venv fixtures ref export coreml coreml-fp16 validate validate-fp16 validate-swift demo smoke macos-build ios-build visionos-build bench clean
 .PHONY: ml-sharp
 
 PYTHON ?= python3.11
@@ -27,6 +27,7 @@ help:
 	@echo "  validate-fp16 - parity tests: PyTorch vs CoreML (FP16)"
 	@echo "  validate-swift - parity tests: Swift PLY vs ref"
 	@echo "  demo      - build/run Swift demo (image→PLY→frames/video)"
+	@echo "  smoke     - run macOS smoke test (SwiftPM)"
 	@echo "  macos-build - build macOS SwiftUI demo app"
 	@echo "  ios-build - build iOS SwiftUI demo app"
 	@echo "  visionos-build - build visionOS SwiftUI demo app"
@@ -97,6 +98,19 @@ demo: coreml fixtures
 	else \
 		echo "warning: timeout not found; running demo without a watchdog"; \
 		cd $(SWIFT_DEMO_DIR) && .build/release/SharpDemoApp ../../$(DEMO_IMAGE) ../../$(DEMO_OUT) --frames $(DEMO_FRAMES) --size $(DEMO_SIZE) --video ../../$(DEMO_OUT)/out.mp4 --fps $(DEMO_FPS); \
+	fi
+
+SMOKE_FRAMES ?= 2
+SMOKE_SIZE ?= 256x256
+SMOKE_TIMEOUT ?= 180s
+SMOKE_OUT ?= artifacts/fixtures/coreml/quick_demo
+
+smoke:
+	@if [ -n "$(TIMEOUT_BIN)" ]; then \
+		$(TIMEOUT_BIN) -k $(TIMEOUT_KILL_AFTER) $(SMOKE_TIMEOUT) swift run --package-path $(SWIFT_DEMO_DIR) -c release SharpQuickDemo --frames $(SMOKE_FRAMES) --size $(SMOKE_SIZE) --out $(SMOKE_OUT); \
+	else \
+		echo "warning: timeout not found; running swift smoke without a watchdog"; \
+		swift run --package-path $(SWIFT_DEMO_DIR) -c release SharpQuickDemo --frames $(SMOKE_FRAMES) --size $(SMOKE_SIZE) --out $(SMOKE_OUT); \
 	fi
 
 IOS_PROJECT := Swift/SharpDemoApp/SharpDemoAppUI.xcodeproj

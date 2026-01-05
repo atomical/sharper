@@ -155,3 +155,6 @@ This log is append-only. Every entry includes an ISO-8601 timestamp with timezon
 - Ran macOS smoke checks (local):
   - `swift run -c release SharpQuickDemo --frames 2 --size 256x256` produced `scene.ply`, `preview.png`, and `out.mp4` under `artifacts/fixtures/coreml/quick_demo/`.
   - `make macos-build` succeeded for `SharpDemoAppMac` (Xcode project build).
+
+## 2026-01-04T19:09:22-06:00
+- Added a root-level `make smoke` target for macOS SwiftPM smoke testing (runs `SharpQuickDemo` with a timeout).
