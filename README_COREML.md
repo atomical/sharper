@@ -77,6 +77,7 @@ Notes:
 - `docs/io_contract.md`: exact preprocessing + tensor semantics (source of truth)
 - `docs/coreml_strategy.md`: conversion strategy and fallbacks
 - `docs/OP_COMPAT.md`: conversion workarounds as they are discovered
+- `docs/swift_integration.md`: integrating `SharpCoreML` + renderer into Swift projects
 - `docs/PROGRESS.md`: timestamped implementation log
 
 ## Troubleshooting
