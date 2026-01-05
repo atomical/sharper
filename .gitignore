@@ -14,6 +14,8 @@ third_party/ml-sharp/
 artifacts/fixtures/inputs/*.jpg
 artifacts/fixtures/inputs/*.jpeg
 artifacts/fixtures/inputs/*.png
+artifacts/fixtures/inputs/*.heic
+artifacts/fixtures/inputs/*.HEIC
 artifacts/fixtures/inputs/MANIFEST.txt
 artifacts/fixtures/ref/
 artifacts/fixtures/coreml/
@@ -36,3 +38,7 @@ Swift/**/.swiftpm/
 # But ignore user-specific Xcode state inside it.
 Swift/SharpDemoApp/SharpDemoAppUI.xcodeproj/xcuserdata/
 DerivedData/
+
+# Local personal photos (used as optional fixtures; don't commit).
+IMG_6221.jpg
+IMG_6221.HEIC

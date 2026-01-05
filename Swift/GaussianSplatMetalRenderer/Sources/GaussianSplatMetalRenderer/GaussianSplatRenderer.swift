@@ -28,18 +28,36 @@ public struct PinholeCamera {
         self.cy = cy
     }
 
-    public static func lookAt(eye: SIMD3<Float>, target: SIMD3<Float>, up: SIMD3<Float> = SIMD3<Float>(0, -1, 0)) -> simd_float4x4 {
-        let z = simd_normalize(target - eye) // forward (+Z)
-        let x = simd_normalize(simd_cross(up, z))
-        let y = simd_cross(z, x)
+    public static func lookAt(
+        eye: SIMD3<Float>,
+        target: SIMD3<Float>,
+        up: SIMD3<Float> = SIMD3<Float>(0, -1, 0)
+    ) -> simd_float4x4 {
+        // OpenCV-style camera convention:
+        // - +X right
+        // - +Y down
+        // - +Z forward
+        //
+        // Build a world->camera view matrix suitable for Metal's column-major `M * p` convention.
+        let forward = simd_normalize(target - eye) // +Z
+        var right = simd_cross(forward, up)
+        if simd_length_squared(right) < 1e-12 {
+            // Fallback if up is parallel to forward.
+            right = simd_cross(forward, SIMD3<Float>(0, 0, 1))
+        }
+        right = simd_normalize(right) // +X
+        let down = simd_cross(forward, right) // +Y (down)
 
-        let t = SIMD3<Float>(-simd_dot(x, eye), -simd_dot(y, eye), -simd_dot(z, eye))
+        let tx = -simd_dot(right, eye)
+        let ty = -simd_dot(down, eye)
+        let tz = -simd_dot(forward, eye)
 
+        // Column-major: columns are the basis vectors' components per row.
         return simd_float4x4(
-            SIMD4<Float>(x.x, x.y, x.z, 0),
-            SIMD4<Float>(y.x, y.y, y.z, 0),
-            SIMD4<Float>(z.x, z.y, z.z, 0),
-            SIMD4<Float>(t.x, t.y, t.z, 1)
+            SIMD4<Float>(right.x, down.x, forward.x, 0),
+            SIMD4<Float>(right.y, down.y, forward.y, 0),
+            SIMD4<Float>(right.z, down.z, forward.z, 0),
+            SIMD4<Float>(tx, ty, tz, 1)
         )
     }
 }

@@ -243,49 +243,51 @@ struct SharpDemoApp {
                 let renderer = try timed("Init renderer") { try GaussianSplatRenderer(device: device) }
                 rssPeak = max(rssPeak, residentMemoryBytes())
 
-                let (center, radius): (SIMD3<Float>, Float) = timed("Compute bounds") {
-                    let meanPtr = scene.means.contents().bindMemory(to: Float.self, capacity: scene.count * 3)
-                    var minV = SIMD3<Float>(repeating: .greatestFiniteMagnitude)
-                    var maxV = SIMD3<Float>(repeating: -.greatestFiniteMagnitude)
-                    for i in 0..<scene.count {
-                        let x = meanPtr[i * 3 + 0]
-                        let y = meanPtr[i * 3 + 1]
-                        let z = meanPtr[i * 3 + 2]
-                        minV = SIMD3<Float>(min(minV.x, x), min(minV.y, y), min(minV.z, z))
-                        maxV = SIMD3<Float>(max(maxV.x, x), max(maxV.y, y), max(maxV.z, z))
+                let (cameras, depth) = timed("Compute trajectory") {
+                    var p = MLSharpTrajectoryParams()
+                    p.kind = .rotateForward
+                    p.numSteps = args.frames
+
+                    if let meta, meta.intrinsic.count >= 9, meta.imageWidth > 0, meta.imageHeight > 0 {
+                        return MLSharpTrajectory.makeCameras(
+                            scene: scene,
+                            sourceImageWidth: Int(meta.imageWidth),
+                            sourceImageHeight: Int(meta.imageHeight),
+                            intrinsicFx: meta.intrinsic[0],
+                            intrinsicFy: meta.intrinsic[4],
+                            intrinsicCx: meta.intrinsic[2],
+                            intrinsicCy: meta.intrinsic[5],
+                            renderWidth: args.width,
+                            renderHeight: args.height,
+                            params: p
+                        )
                     }
-                    let center = (minV + maxV) * 0.5
-                    let ext = (maxV - minV)
-                    let radius = max(0.5, simd_length(ext) * 0.6)
-                    return (center, radius)
-                }
 
-                let fx: Float
-                let fy: Float
-                let cx: Float
-                let cy: Float
-                if let meta, meta.intrinsic.count >= 9, meta.imageWidth > 0, meta.imageHeight > 0 {
-                    let srcW = Float(meta.imageWidth)
-                    let srcH = Float(meta.imageHeight)
-                    let fx0 = meta.intrinsic[0]
-                    let fy0 = meta.intrinsic[4]
-                    let cx0 = meta.intrinsic[2]
-                    let cy0 = meta.intrinsic[5]
-
-                    fx = fx0 * Float(args.width) / srcW
-                    fy = fy0 * Float(args.height) / srcH
-                    cx = cx0 * Float(args.width) / srcW
-                    cy = cy0 * Float(args.height) / srcH
-                    log("Using PLY intrinsics: src=\(meta.imageWidth)x\(meta.imageHeight) fx=\(String(format: "%.2f", fx0))")
-                } else {
                     // Fallback: 60° horizontal FOV.
                     let fovX: Float = 60.0 * Float.pi / 180.0
-                    fx = 0.5 * Float(args.width) / tan(0.5 * fovX)
-                    fy = fx
-                    cx = Float(args.width) * 0.5
-                    cy = Float(args.height) * 0.5
+                    let fx = 0.5 * Float(args.width) / tan(0.5 * fovX)
+                    let cx = Float(args.width) * 0.5
+                    let cy = Float(args.height) * 0.5
+                    return MLSharpTrajectory.makeCameras(
+                        scene: scene,
+                        sourceImageWidth: args.width,
+                        sourceImageHeight: args.height,
+                        intrinsicFx: fx,
+                        intrinsicFy: fx,
+                        intrinsicCx: cx,
+                        intrinsicCy: cy,
+                        renderWidth: args.width,
+                        renderHeight: args.height,
+                        params: p
+                    )
+                }
+
+                if let meta, meta.intrinsic.count >= 9, meta.imageWidth > 0, meta.imageHeight > 0 {
+                    log("Using PLY intrinsics: src=\(meta.imageWidth)x\(meta.imageHeight) fx=\(String(format: "%.2f", meta.intrinsic[0]))")
+                } else {
                     log("Using fallback intrinsics (60° FOV).")
                 }
+                log("Depth quantiles (m): min≈\(String(format: "%.3f", depth.min)) focus≈\(String(format: "%.3f", depth.focus)) max≈\(String(format: "%.3f", depth.max))")
 
                 try FileManager.default.createDirectory(at: outURL, withIntermediateDirectories: true)
 
@@ -298,13 +300,10 @@ struct SharpDemoApp {
                     videoWriter = try MP4VideoWriter(url: videoURL, width: args.width, height: args.height, fps: args.fps)
                 }
 
-                for t in 0..<args.frames {
+                for t in 0..<cameras.count {
                     autoreleasepool {
-                        log("Frame \(t + 1)/\(args.frames)")
-                        let ang = Float(t) * 2.0 * Float.pi / Float(max(args.frames, 1))
-                        let eye = center + SIMD3<Float>(radius * sin(ang), 0, radius * cos(ang))
-                        let view = PinholeCamera.lookAt(eye: eye, target: center)
-                        let cam = PinholeCamera(viewMatrix: view, fx: fx, fy: fy, cx: cx, cy: cy)
+                        log("Frame \(t + 1)/\(cameras.count)")
+                        let cam = cameras[t]
 
                         do {
                             let img = try renderer.renderToCGImage(scene: scene, camera: cam, width: args.width, height: args.height)
@@ -384,46 +383,43 @@ struct SharpDemoApp {
                 log("Init renderer (\(String(format: "%.3fs", rendererInitSec)))")
                 rssPeak = max(rssPeak, residentMemoryBytes())
 
-                // Compute a bounding box to pick an orbit radius.
-                let (center, radius): (SIMD3<Float>, Float) = timed("Compute bounds") {
-                    let meanPtr = scene.means.contents().bindMemory(to: Float.self, capacity: scene.count * 3)
-                    var minV = SIMD3<Float>(repeating: .greatestFiniteMagnitude)
-                    var maxV = SIMD3<Float>(repeating: -.greatestFiniteMagnitude)
-                    for i in 0..<scene.count {
-                        let x = meanPtr[i * 3 + 0]
-                        let y = meanPtr[i * 3 + 1]
-                        let z = meanPtr[i * 3 + 2]
-                        minV = SIMD3<Float>(min(minV.x, x), min(minV.y, y), min(minV.z, z))
-                        maxV = SIMD3<Float>(max(maxV.x, x), max(maxV.y, y), max(maxV.z, z))
-                    }
-                    let center = (minV + maxV) * 0.5
-                    let ext = (maxV - minV)
-                    let radius = max(0.5, simd_length(ext) * 0.6)
-                    return (center, radius)
+                let (cameras, depth) = timed("Compute trajectory") {
+                    var p = MLSharpTrajectoryParams()
+                    p.kind = .rotateForward
+                    p.numSteps = args.frames
+                    let fx0 = Float(prediction.metadata.focalLengthPx)
+                    let cx0 = Float(prediction.metadata.imageWidth) * 0.5
+                    let cy0 = Float(prediction.metadata.imageHeight) * 0.5
+                    return MLSharpTrajectory.makeCameras(
+                        scene: scene,
+                        sourceImageWidth: prediction.metadata.imageWidth,
+                        sourceImageHeight: prediction.metadata.imageHeight,
+                        intrinsicFx: fx0,
+                        intrinsicFy: fx0,
+                        intrinsicCx: cx0,
+                        intrinsicCy: cy0,
+                        renderWidth: args.width,
+                        renderHeight: args.height,
+                        params: p
+                    )
                 }
-
-                let fx = prediction.metadata.focalLengthPx * Float(args.width) / Float(prediction.metadata.imageWidth)
-                let fy = prediction.metadata.focalLengthPx * Float(args.height) / Float(prediction.metadata.imageHeight)
-                let cx = Float(args.width) * 0.5
-                let cy = Float(args.height) * 0.5
+                log("Depth quantiles (m): min≈\(String(format: "%.3f", depth.min)) focus≈\(String(format: "%.3f", depth.focus)) max≈\(String(format: "%.3f", depth.max))")
 
                 var renderFrameTimes: [Double] = []
                 renderFrameTimes.reserveCapacity(args.frames)
                 let renderTotalStart = CFAbsoluteTimeGetCurrent()
-                for t in 0..<args.frames {
+                for t in 0..<cameras.count {
                     let frameStart = CFAbsoluteTimeGetCurrent()
-                    let ang = Float(t) * 2.0 * Float.pi / Float(max(args.frames, 1))
-                    let eye = center + SIMD3<Float>(radius * sin(ang), 0, radius * cos(ang))
-                    let view = PinholeCamera.lookAt(eye: eye, target: center)
-                    let cam = PinholeCamera(viewMatrix: view, fx: fx, fy: fy, cx: cx, cy: cy)
+                    let cam = cameras[t]
                     _ = try renderer.renderToCGImage(scene: scene, camera: cam, width: args.width, height: args.height)
                     let dt = CFAbsoluteTimeGetCurrent() - frameStart
                     renderFrameTimes.append(dt)
                     rssPeak = max(rssPeak, residentMemoryBytes())
                 }
                 let renderTotalSec = CFAbsoluteTimeGetCurrent() - renderTotalStart
-                let renderFps = Double(args.frames) / max(renderTotalSec, 1e-9)
-                log("Render \(args.frames) frames (\(String(format: "%.3fs", renderTotalSec))) -> \(String(format: "%.2f", renderFps)) FPS")
+                let renderCount = max(cameras.count, 1)
+                let renderFps = Double(renderCount) / max(renderTotalSec, 1e-9)
+                log("Render \(renderCount) frames (\(String(format: "%.3fs", renderTotalSec))) -> \(String(format: "%.2f", renderFps)) FPS")
 
                 let unitStr: String = switch args.computeUnits {
                 case .all: "all"
@@ -476,28 +472,27 @@ struct SharpDemoApp {
             let scene = try timed("Load PLY") { try PLYLoader.loadMLSharpCompatiblePLY(url: plyURL, device: device) }
             let renderer = try timed("Init renderer") { try GaussianSplatRenderer(device: device) }
 
-            // Compute a bounding box to pick an orbit radius.
-            let (center, radius): (SIMD3<Float>, Float) = timed("Compute bounds") {
-                let meanPtr = scene.means.contents().bindMemory(to: Float.self, capacity: scene.count * 3)
-                var minV = SIMD3<Float>(repeating: .greatestFiniteMagnitude)
-                var maxV = SIMD3<Float>(repeating: -.greatestFiniteMagnitude)
-                for i in 0..<scene.count {
-                    let x = meanPtr[i * 3 + 0]
-                    let y = meanPtr[i * 3 + 1]
-                    let z = meanPtr[i * 3 + 2]
-                    minV = SIMD3<Float>(min(minV.x, x), min(minV.y, y), min(minV.z, z))
-                    maxV = SIMD3<Float>(max(maxV.x, x), max(maxV.y, y), max(maxV.z, z))
-                }
-                let center = (minV + maxV) * 0.5
-                let ext = (maxV - minV)
-                let radius = max(0.5, simd_length(ext) * 0.6)
-                return (center, radius)
+            let (cameras, depth) = timed("Compute trajectory") {
+                var p = MLSharpTrajectoryParams()
+                p.kind = .rotateForward
+                p.numSteps = args.frames
+                let fx0 = Float(prediction.metadata.focalLengthPx)
+                let cx0 = Float(prediction.metadata.imageWidth) * 0.5
+                let cy0 = Float(prediction.metadata.imageHeight) * 0.5
+                return MLSharpTrajectory.makeCameras(
+                    scene: scene,
+                    sourceImageWidth: prediction.metadata.imageWidth,
+                    sourceImageHeight: prediction.metadata.imageHeight,
+                    intrinsicFx: fx0,
+                    intrinsicFy: fx0,
+                    intrinsicCx: cx0,
+                    intrinsicCy: cy0,
+                    renderWidth: args.width,
+                    renderHeight: args.height,
+                    params: p
+                )
             }
-
-            let fx = prediction.metadata.focalLengthPx * Float(args.width) / Float(prediction.metadata.imageWidth)
-            let fy = prediction.metadata.focalLengthPx * Float(args.height) / Float(prediction.metadata.imageHeight)
-            let cx = Float(args.width) * 0.5
-            let cy = Float(args.height) * 0.5
+            log("Depth quantiles (m): min≈\(String(format: "%.3f", depth.min)) focus≈\(String(format: "%.3f", depth.focus)) max≈\(String(format: "%.3f", depth.max))")
 
             let framesDir = outURL.appendingPathComponent("frames", isDirectory: true)
             let videoURL = args.videoPath.map { URL(fileURLWithPath: $0) }
@@ -507,13 +502,10 @@ struct SharpDemoApp {
                 videoWriter = try MP4VideoWriter(url: videoURL, width: args.width, height: args.height, fps: args.fps)
             }
 
-            for t in 0..<args.frames {
+            for t in 0..<cameras.count {
                 autoreleasepool {
-                    log("Frame \(t + 1)/\(args.frames)")
-                    let ang = Float(t) * 2.0 * Float.pi / Float(max(args.frames, 1))
-                    let eye = center + SIMD3<Float>(radius * sin(ang), 0, radius * cos(ang))
-                    let view = PinholeCamera.lookAt(eye: eye, target: center)
-                    let cam = PinholeCamera(viewMatrix: view, fx: fx, fy: fy, cx: cx, cy: cy)
+                    log("Frame \(t + 1)/\(cameras.count)")
+                    let cam = cameras[t]
 
                     do {
                         let img = try renderer.renderToCGImage(scene: scene, camera: cam, width: args.width, height: args.height)

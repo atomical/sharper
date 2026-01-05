@@ -178,23 +178,6 @@ private func buildScene(device: MTLDevice, prediction: SharpPrediction) throws -
     )
 }
 
-private func computeBounds(scene: GaussianScene) -> (SIMD3<Float>, Float) {
-    let meanPtr = scene.means.contents().bindMemory(to: Float.self, capacity: scene.count * 3)
-    var minV = SIMD3<Float>(repeating: .greatestFiniteMagnitude)
-    var maxV = SIMD3<Float>(repeating: -.greatestFiniteMagnitude)
-    for i in 0..<scene.count {
-        let x = meanPtr[i * 3 + 0]
-        let y = meanPtr[i * 3 + 1]
-        let z = meanPtr[i * 3 + 2]
-        minV = SIMD3<Float>(min(minV.x, x), min(minV.y, y), min(minV.z, z))
-        maxV = SIMD3<Float>(max(maxV.x, x), max(maxV.y, y), max(maxV.z, z))
-    }
-    let center = (minV + maxV) * 0.5
-    let ext = maxV - minV
-    let radius = max(0.5, simd_length(ext) * 0.6)
-    return (center, radius)
-}
-
 @main
 struct SharpQuickDemo {
     static func main() async {
@@ -220,24 +203,34 @@ struct SharpQuickDemo {
 
             guard let device = MTLCreateSystemDefaultDevice() else { throw QuickDemoError.metalUnavailable }
             let scene = try buildScene(device: device, prediction: prediction)
-            let (center, radius) = computeBounds(scene: scene)
-
-            let fx = prediction.metadata.focalLengthPx * Float(args.width) / Float(prediction.metadata.imageWidth)
-            let fy = prediction.metadata.focalLengthPx * Float(args.height) / Float(prediction.metadata.imageHeight)
-            let cx = Float(args.width) * 0.5
-            let cy = Float(args.height) * 0.5
+            var p = MLSharpTrajectoryParams()
+            p.kind = .rotateForward
+            p.numSteps = args.frames
+            let fx0 = Float(prediction.metadata.focalLengthPx)
+            let cx0 = Float(prediction.metadata.imageWidth) * 0.5
+            let cy0 = Float(prediction.metadata.imageHeight) * 0.5
+            let (cameras, depth) = MLSharpTrajectory.makeCameras(
+                scene: scene,
+                sourceImageWidth: prediction.metadata.imageWidth,
+                sourceImageHeight: prediction.metadata.imageHeight,
+                intrinsicFx: fx0,
+                intrinsicFy: fx0,
+                intrinsicCx: cx0,
+                intrinsicCy: cy0,
+                renderWidth: args.width,
+                renderHeight: args.height,
+                params: p
+            )
+            log("Depth quantiles (m): min≈\(String(format: "%.3f", depth.min)) focus≈\(String(format: "%.3f", depth.focus)) max≈\(String(format: "%.3f", depth.max))")
 
             let renderer = try GaussianSplatRenderer(device: device)
             let videoURL = args.outDir.appendingPathComponent("out.mp4")
             let videoWriter = try MP4VideoWriter(url: videoURL, width: args.width, height: args.height, fps: args.fps)
 
             var preview: CGImage? = nil
-            for t in 0..<args.frames {
-                if t == 0 { log("Rendering \(args.frames) frames (\(args.width)x\(args.height)) → \(videoURL.lastPathComponent)…") }
-                let ang = Float(t) * 2.0 * Float.pi / Float(max(args.frames, 1))
-                let eye = center + SIMD3<Float>(radius * sin(ang), 0, radius * cos(ang))
-                let view = PinholeCamera.lookAt(eye: eye, target: center)
-                let cam = PinholeCamera(viewMatrix: view, fx: fx, fy: fy, cx: cx, cy: cy)
+            for t in 0..<cameras.count {
+                if t == 0 { log("Rendering \(cameras.count) frames (\(args.width)x\(args.height)) → \(videoURL.lastPathComponent)…") }
+                let cam = cameras[t]
 
                 let img = try renderer.renderToCGImage(scene: scene, camera: cam, width: args.width, height: args.height)
                 if preview == nil { preview = img }
@@ -259,4 +252,3 @@ struct SharpQuickDemo {
         }
     }
 }
-

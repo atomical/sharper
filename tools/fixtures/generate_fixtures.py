@@ -3,10 +3,11 @@ from __future__ import annotations
 
 import argparse
 import random
+import shutil
 from pathlib import Path
 
 import numpy as np
-from PIL import Image, ImageDraw, ImageEnhance, ImageFilter
+from PIL import Image, ImageDraw, ImageEnhance, ImageFilter, ImageOps
 
 
 def _write_jpg(path: Path, rgb: np.ndarray, quality: int = 95) -> None:
@@ -145,14 +146,33 @@ def main() -> int:
     indoor = np.asarray(Image.open(out_dir / "indoor_teaser.jpg").convert("RGB"))
     _write_jpg(out_dir / "low_light.jpg", _low_light(indoor, args.seed + 4))
 
+    # 6) Optional: local user photo fixture if present at repo root.
+    extra_img = Path(__file__).resolve().parents[2] / "IMG_6221.jpg"
+    if extra_img.exists():
+        img = Image.open(extra_img)
+        img = ImageOps.exif_transpose(img).convert("RGB")
+        img = img.resize((width, height), resample=Image.BICUBIC)
+        img.save(out_dir / "IMG_6221.jpg", format="JPEG", quality=95, subsampling=0, optimize=True)
+
+    # 7) Optional: local HEIC fixture (keep original file to preserve EXIF focal length).
+    extra_heic = Path(__file__).resolve().parents[2] / "IMG_6221.HEIC"
+    if not extra_heic.exists():
+        extra_heic = Path(__file__).resolve().parents[2] / "IMG_6221.heic"
+    if extra_heic.exists():
+        shutil.copy2(extra_heic, out_dir / "IMG_6221_heic.heic")
+
     # Write a small manifest for reproducibility.
     manifest_lines = [
         "fixtures:",
         f"  seed: {args.seed}",
-        f"  size: [{width}, {height}]",
+        f"  generated_size: [{width}, {height}]",
+        "  notes:",
+        '    - "Optional local files may keep original dimensions (not resized)."',
         "  files:",
     ]
-    for p in sorted(out_dir.glob("*.jpg")):
+    exts = {".jpg", ".jpeg", ".png", ".heic", ".tif", ".tiff", ".bmp"}
+    files = [p for p in out_dir.iterdir() if p.is_file() and p.suffix.lower() in exts]
+    for p in sorted(files, key=lambda x: x.name):
         manifest_lines.append(f"    - {p.name}")
     (out_dir / "MANIFEST.txt").write_text("\n".join(manifest_lines) + "\n", encoding="utf-8")
 

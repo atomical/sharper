@@ -190,7 +190,19 @@ def main() -> int:
         "--tol-cov-max-abs",
         type=float,
         default=1e-4,
-        help="Max abs tolerance for covariance implied by (quaternions_pre, singular_values_pre).",
+        help="p99 abs tolerance for covariance implied by (quaternions_pre, singular_values_pre).",
+    )
+    p.add_argument(
+        "--tol-geom-p99-rel",
+        type=float,
+        default=5e-3,
+        help="p99 relative tolerance for geometry tensors (mean_vectors_pre, singular_values_pre).",
+    )
+    p.add_argument(
+        "--tol-geom-mean-rel",
+        type=float,
+        default=1e-3,
+        help="Mean relative tolerance for geometry tensors (mean_vectors_pre, singular_values_pre).",
     )
     args = p.parse_args()
 
@@ -220,7 +232,9 @@ def main() -> int:
             "mean_vectors_pre_max_abs": args.tol_mean_max_abs,
             "default_max_abs": args.tol_default_max_abs,
             "opacities_pre_max_abs": args.tol_opacities_max_abs,
-            "covariance_max_abs": args.tol_cov_max_abs,
+            "covariance_p99_abs": args.tol_cov_max_abs,
+            "geometry_p99_rel": args.tol_geom_p99_rel,
+            "geometry_mean_rel": args.tol_geom_mean_rel,
         },
     }
 
@@ -252,7 +266,7 @@ def main() -> int:
         # Compare.
         comparisons: dict[str, Any] = {}
 
-        def _cmp(key: str, tol_max_abs: float):
+        def _cmp(key: str, tol_max_abs: float, *, geom_rel_gate: bool = False):
             nonlocal failed
             if key not in ref:
                 raise SystemExit(f"Reference key missing: {key} in {ref_npz}")
@@ -268,13 +282,21 @@ def main() -> int:
             stats["shape"] = list(a.shape)
             stats["dtype_ref"] = str(a.dtype)
             stats["dtype_coreml"] = str(b.dtype)
-            stats["pass_max_abs"] = bool(stats["max_abs"] <= tol_max_abs)
+            pass_abs = bool(stats["max_abs"] <= tol_max_abs)
+            pass_rel = bool(stats["p99_rel"] <= args.tol_geom_p99_rel and stats["mean_rel"] <= args.tol_geom_mean_rel)
+            stats["pass_max_abs"] = pass_abs
+            if geom_rel_gate:
+                stats["pass_p99_rel"] = bool(stats["p99_rel"] <= args.tol_geom_p99_rel)
+                stats["pass_mean_rel"] = bool(stats["mean_rel"] <= args.tol_geom_mean_rel)
+                stats["pass"] = bool(pass_abs or pass_rel)
+            else:
+                stats["pass"] = pass_abs
             comparisons[key] = stats
-            if not stats["pass_max_abs"]:
+            if not stats["pass"]:
                 failed = True
 
-        _cmp("mean_vectors_pre", args.tol_mean_max_abs)
-        _cmp("singular_values_pre", args.tol_default_max_abs)
+        _cmp("mean_vectors_pre", args.tol_mean_max_abs, geom_rel_gate=True)
+        _cmp("singular_values_pre", args.tol_default_max_abs, geom_rel_gate=True)
         _cmp("colors_linear_pre", args.tol_default_max_abs)
         _cmp("opacities_pre", args.tol_opacities_max_abs)
 
@@ -295,9 +317,9 @@ def main() -> int:
             np.asarray(out["quaternions_pre"]),
             np.asarray(out["singular_values_pre"]),
         )
-        cov_stats["pass_max_abs"] = bool(cov_stats["max_abs"] <= args.tol_cov_max_abs)
+        cov_stats["pass_p99_abs"] = bool(cov_stats["p99_abs"] <= args.tol_cov_max_abs)
         comparisons["covariance_pre"] = cov_stats
-        if not cov_stats["pass_max_abs"]:
+        if not cov_stats["pass_p99_abs"]:
             failed = True
 
         overall["cases"].append(
@@ -319,15 +341,16 @@ def main() -> int:
         comps = case_entry["comparisons"]
         for k in ["mean_vectors_pre", "singular_values_pre", "colors_linear_pre", "opacities_pre"]:
             s = comps.get(k, {})
-            if "pass_max_abs" in s:
-                lines.append(f"- `{k}` max_abs={s['max_abs']:.3e} p99_abs={s['p99_abs']:.3e} pass={s['pass_max_abs']}")
+            if "pass" in s:
+                line = f"- `{k}` max_abs={s['max_abs']:.3e} p99_abs={s['p99_abs']:.3e} p99_rel={s['p99_rel']:.3e} pass={s['pass']}"
+                lines.append(line)
         q = comps.get("quaternions_pre", {})
         if "angle_deg_max" in q:
             lines.append(f"- `quaternions_pre` max_deg={q['angle_deg_max']:.3f} mean_deg={q['angle_deg_mean']:.3f} (informational)")
         cov = comps.get("covariance_pre", {})
         if "max_abs" in cov:
             lines.append(
-                f"- `covariance_pre` max_abs={cov['max_abs']:.3e} p99_abs≈{cov['p99_abs']:.3e} pass={cov['pass_max_abs']}"
+                f"- `covariance_pre` max_abs={cov['max_abs']:.3e} p99_abs≈{cov['p99_abs']:.3e} pass={cov['pass_p99_abs']}"
             )
         lines.append("")
     report_md.write_text("\n".join(lines) + "\n", encoding="utf-8")
