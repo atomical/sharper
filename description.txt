@@ -1,0 +1,14 @@
+• This repo is a macOS-first, end-to-end “SHARP on Apple platforms” port that reproduces apple/ml-sharp inference and rendering without CUDA:
+
+  - Goal: predict (single RGB image → 3D Gaussian splat scene .ply) and render (novel-view trajectory rendering) with PyTorch ↔ CoreML parity.
+  - Reference: a pinned upstream ml-sharp checkout lives in third_party/ml-sharp and defines the ground-truth semantics.
+  - Deterministic golden outputs: tools/export/ref_infer.py runs the PyTorch model like the CLI and writes raw_outputs.npz + scene.ply for fixtures.
+  - Export + CoreML conversion: tools/export/export_sharp.py creates a stable TorchScript graph; tools/coreml/convert_to_coreml.py converts it to artifacts/Sharp.mlpackage (ML Program, FP32 as the validated
+    baseline).
+  - Parity testing: tools/coreml/validate_coreml.py compares PyTorch vs CoreML outputs across fixtures and produces a report.
+  - Swift inference library: Swift/SharpCoreML does preprocessing → CoreML inference → Metal postprocess (unprojection) → .ply export (SharpPLYWriter).
+  - Metal renderer: Swift/GaussianSplatMetalRenderer loads .ply or buffers and renders anisotropic 3DGS via Metal, with trajectory helpers and MP4 export.
+  - Demos: Swift/SharpDemoApp provides SharpDemoApp (full CLI) and SharpQuickDemo (swift run … one-command demo).
+  - Repro scripts: root Makefile drives ref, export, coreml, validate, demo, bench, smoke.
+  - Docs: exact ML I/O contract and integration guidance live under docs/ (progress tracked in docs/PROGRESS.md with timestamps).
+  - Scope note: training and CUDA are out; visionOS is deferred (macOS is the primary target, iOS is supported by the Swift packages).
