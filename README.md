@@ -1,5 +1,7 @@
 # SHARP on Apple (CoreML + Metal)
 
+Formerly `README_COREML.md`.
+
 This repo converts Apple’s SHARP model (`apple/ml-sharp`) to a CoreML `.mlpackage` and recreates the end-to-end pipeline on Apple platforms:
 
 - **predict**: RGB image → 3D Gaussian splat scene (`.ply`)

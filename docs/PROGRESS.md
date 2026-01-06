@@ -34,7 +34,7 @@ This log is append-only. Every entry includes an ISO-8601 timestamp with timezon
   - `docs/io_contract.md` (exact preprocessing + tensor semantics)
   - `docs/coreml_strategy.md` (monolith vs split plan)
   - `docs/OP_COMPAT.md` (workaround log scaffold)
-  - `README_COREML.md` (build/run entrypoint)
+  - `README.md` (build/run entrypoint)
 
 ## 2026-01-04T09:42:05-06:00
 - Phase 3–5 (CoreML) baseline:
@@ -205,4 +205,7 @@ This log is append-only. Every entry includes an ISO-8601 timestamp with timezon
   - Exposed flags in `SharpDemoApp` / `SharpQuickDemo` and updated `docs/swift_integration.md`.
 
 ## 2026-01-05T09:01:01-06:00
-- Added a “less fog” render preset example command to `README_COREML.md`.
+- Added a “less fog” render preset example command to `README.md`.
+
+## 2026-01-05T18:20:38-06:00
+- Renamed `README_COREML.md` → `README.md`.
