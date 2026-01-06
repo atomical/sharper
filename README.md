@@ -21,6 +21,16 @@ This repo converts Apple’s SHARP model (`apple/ml-sharp`) to a CoreML `.mlpack
 make venv
 ```
 
+2) Build everything a user needs (reference outputs → export → CoreML → parity → Swift demo):
+```bash
+make venv fixtures ref export coreml validate validate-swift demo
+```
+
+3) Run a fast end-to-end smoke test:
+```bash
+make smoke
+```
+
 2) Generate deterministic fixture images:
 ```bash
 make fixtures

@@ -209,3 +209,6 @@ This log is append-only. Every entry includes an ISO-8601 timestamp with timezon
 
 ## 2026-01-05T18:20:38-06:00
 - Renamed `README_COREML.md` → `README.md`.
+
+## 2026-01-05T18:23:21-06:00
+- Updated `README.md` quickstart with an “all-in-one” build command and `make smoke`.
