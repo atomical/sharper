@@ -46,11 +46,12 @@ struct ContentView: View {
     @State private var renderSize: Int = 512
     @State private var orbitAngleDeg: Double = 0.0
 
-    @State private var status: String = "Select a CoreML model (.mlpackage) and an input image."
+    @State private var status: String = "Select a CoreML model (.mlpackage) and an input image. Simulator auto-loads from Documents/SharpDemo when present."
     @State private var timings: SharpTimings?
 
     @State private var lastPLYURL: URL?
     @State private var lastRenderCGImage: CGImage?
+    @State private var didApplyDefaults = false
 
     private struct RunResult: Sendable {
         var status: String
@@ -145,6 +146,9 @@ struct ContentView: View {
             }
         }
         .padding()
+        .onAppear {
+            applyDefaultSelectionsIfNeeded()
+        }
         .fileImporter(
             isPresented: $showModelPicker,
             allowedContentTypes: [UTType(filenameExtension: "mlpackage") ?? .data],
@@ -163,6 +167,39 @@ struct ContentView: View {
                 imageURL = url
             }
         }
+    }
+
+    @MainActor
+    private func applyDefaultSelectionsIfNeeded() {
+        guard !didApplyDefaults else { return }
+        didApplyDefaults = true
+#if targetEnvironment(simulator)
+        let defaults = ContentView.defaultSelection()
+        var didSetModel = false
+        var didSetImage = false
+
+        if modelURL == nil, let model = defaults.modelURL {
+            modelURL = model
+            didSetModel = true
+        }
+        if imageURL == nil, let image = defaults.imageURL {
+            imageURL = image
+            didSetImage = true
+        }
+        if lastPLYURL == nil, let ply = defaults.plyURL {
+            lastPLYURL = ply
+        }
+
+        if didSetModel || didSetImage {
+            if modelURL != nil && imageURL != nil {
+                status = "Ready (defaults loaded from Documents/SharpDemo)."
+            } else if modelURL != nil {
+                status = "Loaded default model; select an input image."
+            } else if imageURL != nil {
+                status = "Loaded default image; select a CoreML model."
+            }
+        }
+#endif
     }
 
     private func runPredictOnly() {
@@ -311,6 +348,69 @@ struct ContentView: View {
         let ext = maxV - minV
         let radius = max(0.5, simd_length(ext) * 0.6)
         return (center, radius)
+    }
+
+    private struct DefaultSelection {
+        let modelURL: URL?
+        let imageURL: URL?
+        let plyURL: URL?
+    }
+
+    private static func defaultSelection() -> DefaultSelection {
+        let fm = FileManager.default
+        guard let docs = fm.urls(for: .documentDirectory, in: .userDomainMask).first else {
+            return DefaultSelection(modelURL: nil, imageURL: nil, plyURL: nil)
+        }
+
+        let demoDir = docs.appendingPathComponent("SharpDemo", isDirectory: true)
+        let modelCandidates = [
+            demoDir.appendingPathComponent("Sharp.mlpackage"),
+            docs.appendingPathComponent("Sharp.mlpackage"),
+        ]
+        let modelURL = modelCandidates.first(where: { existingPath($0) })
+            ?? newestURL(in: [demoDir, docs], matchingExtensions: ["mlpackage"])
+
+        let imageDirs = [
+            demoDir.appendingPathComponent("inputs", isDirectory: true),
+            demoDir,
+            docs,
+        ]
+        let imageURL = newestURL(in: imageDirs, matchingExtensions: ["jpg", "jpeg", "png", "heic"])
+        let plyURL = newestURL(in: [demoDir], matchingExtensions: ["ply"])
+
+        return DefaultSelection(modelURL: modelURL, imageURL: imageURL, plyURL: plyURL)
+    }
+
+    private static func existingPath(_ url: URL) -> Bool {
+        var isDir = ObjCBool(false)
+        return FileManager.default.fileExists(atPath: url.path, isDirectory: &isDir)
+    }
+
+    private static func newestURL(in directories: [URL], matchingExtensions: [String]) -> URL? {
+        let fm = FileManager.default
+        let exts = Set(matchingExtensions.map { $0.lowercased() })
+        var newest: (url: URL, date: Date)?
+
+        for dir in directories {
+            guard let urls = try? fm.contentsOfDirectory(
+                at: dir,
+                includingPropertiesForKeys: [.contentModificationDateKey],
+                options: [.skipsHiddenFiles]
+            ) else {
+                continue
+            }
+
+            for url in urls {
+                let ext = url.pathExtension.lowercased()
+                guard exts.contains(ext) else { continue }
+                let date = (try? url.resourceValues(forKeys: [.contentModificationDateKey]).contentModificationDate) ?? .distantPast
+                if newest == nil || date > newest!.date {
+                    newest = (url, date)
+                }
+            }
+        }
+
+        return newest?.url
     }
 }
 

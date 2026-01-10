@@ -225,3 +225,12 @@ This log is append-only. Every entry includes an ISO-8601 timestamp with timezon
 
 ## 2026-01-10T07:19:21-06:00
 - Updated `README.md` status notes and removed stale WIP tags from Makefile targets.
+
+## 2026-01-10T07:22:20-06:00
+- Verified visionOS Simulator runtime presence (`visionOS 26.1`) and `make visionos-build` succeeded for `SharpDemoAppVision`.
+
+## 2026-01-10T07:26:22-06:00
+- Launched the visionOS Simulator, installed `SharpDemoAppVision`, and confirmed the app UI appears in a smoke run (screenshot: `artifacts/fixtures/coreml/visionos_smoke.png`).
+
+## 2026-01-10T07:34:33-06:00
+- Added simulator-only default selection of `Sharp.mlpackage` + input image from `Documents/SharpDemo`, and staged defaults in the visionOS Simulator for a preselected UI state (screenshot: `artifacts/fixtures/coreml/visionos_preselect.png`).
