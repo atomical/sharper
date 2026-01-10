@@ -4170,9 +4170,6 @@ MzAuMmFpcjY0X3YyOC1hcHBsZS1tYWNvc3gyNi4wLjAAAAAAAAAAAAAAAAAA
 """
         #endif
 
-        guard let d = Data(base64Encoded: b64, options: .ignoreUnknownCharacters) else {
-            preconditionFailure("Failed to decode embedded metallib for MetalLibrary_GaussianSplat")
-        }
-        return d
+        return Data(base64Encoded: b64, options: .ignoreUnknownCharacters)!
     }()
 }

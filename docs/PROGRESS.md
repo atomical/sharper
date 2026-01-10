@@ -212,3 +212,13 @@ This log is append-only. Every entry includes an ISO-8601 timestamp with timezon
 
 ## 2026-01-05T18:23:21-06:00
 - Updated `README.md` quickstart with an “all-in-one” build command and `make smoke`.
+
+## 2026-01-09T19:28:54-06:00
+- Reached 100% code coverage for `Swift/GaussianSplatMetalRenderer` (macOS), including line/region/function coverage:
+  - `swift test --package-path Swift/GaussianSplatMetalRenderer --enable-code-coverage`
+  - `xcrun llvm-cov report ... -ignore-filename-regex "(Tests/|\\.build/)"`
+- Added shared precondition helpers used across the renderer stack:
+  - `Swift/GaussianSplatMetalRenderer/Sources/GaussianSplatMetalRenderer/Preconditions.swift` (`require`, `Optional.orThrow`).
+- Refactored Metal + video plumbing for deterministic testability:
+  - `MP4VideoWriter.finish(...)` is now idempotent-safe (prevents double `finishWriting` crashes) and keeps explicit `finishTimeout/finishFailed` behavior.
+  - Removed “never happens” branches that were otherwise un-coverable (e.g., embedded metallib base64 decode guard).

@@ -42,8 +42,7 @@ public struct PLYLoader {
         url: URL,
         device: MTLDevice? = nil
     ) throws -> (scene: GaussianScene, metadata: MLSharpPLYMetadata?) {
-        let device = device ?? MTLCreateSystemDefaultDevice()
-        guard let device else { throw PLYLoadError.metalUnavailable }
+        let device = try (device ?? MTLCreateSystemDefaultDevice()).orThrow(PLYLoadError.metalUnavailable)
 
         let data: Data
         do {
@@ -307,14 +306,21 @@ public struct PLYLoader {
             }
         }
 
-        guard let meansBuf = device.makeBuffer(bytes: means, length: means.count * 4, options: .storageModeShared),
-              let quatBuf = device.makeBuffer(bytes: quaternions, length: quaternions.count * 4, options: .storageModeShared),
-              let scalesBuf = device.makeBuffer(bytes: scales, length: scales.count * 4, options: .storageModeShared),
-              let colorsBuf = device.makeBuffer(bytes: colors01, length: colors01.count * 4, options: .storageModeShared),
-              let opaBuf = device.makeBuffer(bytes: opacities, length: opacities.count * 4, options: .storageModeShared)
-        else {
-            throw PLYLoadError.metalBufferCreateFailed
-        }
+        let meansBuf = try device
+            .makeBuffer(bytes: means, length: means.count * 4, options: .storageModeShared)
+            .orThrow(PLYLoadError.metalBufferCreateFailed)
+        let quatBuf = try device
+            .makeBuffer(bytes: quaternions, length: quaternions.count * 4, options: .storageModeShared)
+            .orThrow(PLYLoadError.metalBufferCreateFailed)
+        let scalesBuf = try device
+            .makeBuffer(bytes: scales, length: scales.count * 4, options: .storageModeShared)
+            .orThrow(PLYLoadError.metalBufferCreateFailed)
+        let colorsBuf = try device
+            .makeBuffer(bytes: colors01, length: colors01.count * 4, options: .storageModeShared)
+            .orThrow(PLYLoadError.metalBufferCreateFailed)
+        let opaBuf = try device
+            .makeBuffer(bytes: opacities, length: opacities.count * 4, options: .storageModeShared)
+            .orThrow(PLYLoadError.metalBufferCreateFailed)
 
         return (GaussianScene(count: n, means: meansBuf, quaternions: quatBuf, scales: scalesBuf, colorsLinear: colorsBuf, opacities: opaBuf), metadata)
     }

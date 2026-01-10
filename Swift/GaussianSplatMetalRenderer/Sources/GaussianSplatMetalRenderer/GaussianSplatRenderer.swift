@@ -78,31 +78,27 @@ public final class GaussianSplatRenderer {
     private let linearSampler: MTLSamplerState
 
     public init(device: MTLDevice? = nil) throws {
-        let device = device ?? MTLCreateSystemDefaultDevice()
-        guard let device else { throw GaussianSplatRendererError.metalUnavailable }
+        let device = try (device ?? MTLCreateSystemDefaultDevice()).orThrow(GaussianSplatRendererError.metalUnavailable)
         self.device = device
 
-        guard let commandQueue = device.makeCommandQueue() else {
-            throw GaussianSplatRendererError.commandQueueCreateFailed
-        }
-        self.commandQueue = commandQueue
+        self.commandQueue = try device.makeCommandQueue().orThrow(GaussianSplatRendererError.commandQueueCreateFailed)
 
         // Load precompiled metallib embedded in Swift sources (required on iOS/visionOS).
         let libraryData = MetalLibrary_GaussianSplat.data.withUnsafeBytes { DispatchData(bytes: $0) }
         let library = try device.makeLibrary(data: libraryData)
-        guard let splatV = library.makeFunction(name: "splatVertex"),
-              let splatVSorted = library.makeFunction(name: "splatVertexSorted"),
-              let splatFOIT = library.makeFunction(name: "splatFragmentOIT"),
-              let splatFAlpha = library.makeFunction(name: "splatFragmentAlpha"),
-              let compV = library.makeFunction(name: "compositeVertex"),
-              let compFOIT = library.makeFunction(name: "compositeFragment"),
-              let compFAlpha = library.makeFunction(name: "compositeFromRGBA"),
-              let downF = library.makeFunction(name: "downsampleFragment"),
-              let binCount = library.makeFunction(name: "depthBinCount"),
-              let binScatter = library.makeFunction(name: "depthBinScatter")
-        else {
-            throw GaussianSplatRendererError.libraryLoadFailed
+        func f(_ name: String) throws -> MTLFunction {
+            try library.makeFunction(name: name).orThrow(GaussianSplatRendererError.libraryLoadFailed)
         }
+        let splatV = try f("splatVertex")
+        let splatVSorted = try f("splatVertexSorted")
+        let splatFOIT = try f("splatFragmentOIT")
+        let splatFAlpha = try f("splatFragmentAlpha")
+        let compV = try f("compositeVertex")
+        let compFOIT = try f("compositeFragment")
+        let compFAlpha = try f("compositeFromRGBA")
+        let downF = try f("downsampleFragment")
+        let binCount = try f("depthBinCount")
+        let binScatter = try f("depthBinScatter")
 
         // Pass 1A: weighted blended OIT into (accum, revealage, aux).
         do {
@@ -194,12 +190,8 @@ public final class GaussianSplatRenderer {
             self.downsamplePipeline = try device.makeRenderPipelineState(descriptor: desc)
         }
 
-        do {
-            self.binCountPipeline = try device.makeComputePipelineState(function: binCount)
-            self.binScatterPipeline = try device.makeComputePipelineState(function: binScatter)
-        } catch {
-            throw GaussianSplatRendererError.computePipelineCreateFailed
-        }
+        self.binCountPipeline = try device.makeComputePipelineState(function: binCount)
+        self.binScatterPipeline = try device.makeComputePipelineState(function: binScatter)
 
         func makeSampler(min: MTLSamplerMinMagFilter, mag: MTLSamplerMinMagFilter) throws -> MTLSamplerState {
             let d = MTLSamplerDescriptor()
@@ -208,10 +200,7 @@ public final class GaussianSplatRenderer {
             d.mipFilter = .notMipmapped
             d.sAddressMode = .clampToEdge
             d.tAddressMode = .clampToEdge
-            guard let s = device.makeSamplerState(descriptor: d) else {
-                throw GaussianSplatRendererError.pipelineCreateFailed
-            }
-            return s
+            return try device.makeSamplerState(descriptor: d).orThrow(GaussianSplatRendererError.pipelineCreateFailed)
         }
         self.nearestSampler = try makeSampler(min: .nearest, mag: .nearest)
         self.linearSampler = try makeSampler(min: .linear, mag: .linear)
@@ -281,8 +270,7 @@ public final class GaussianSplatRenderer {
         func makeTex(_ fmt: MTLPixelFormat, _ w: Int, _ h: Int, _ usage: MTLTextureUsage) throws -> MTLTexture {
             let d = MTLTextureDescriptor.texture2DDescriptor(pixelFormat: fmt, width: w, height: h, mipmapped: false)
             d.usage = usage
-            guard let t = device.makeTexture(descriptor: d) else { throw GaussianSplatRendererError.textureCreateFailed }
-            return t
+            return try device.makeTexture(descriptor: d).orThrow(GaussianSplatRendererError.textureCreateFailed)
         }
 
         let outTex = try makeTex(.bgra8Unorm_srgb, wOut, hOut, [.renderTarget, .shaderRead])
@@ -303,9 +291,9 @@ public final class GaussianSplatRenderer {
             width: UInt32(hiW),
             height: UInt32(hiH)
         )
-        guard let camBuf = device.makeBuffer(bytes: &cam, length: MemoryLayout<CameraParams>.stride, options: .storageModeShared) else {
-            throw GaussianSplatRendererError.renderCommandCreateFailed
-        }
+        let camBuf = try device
+            .makeBuffer(bytes: &cam, length: MemoryLayout<CameraParams>.stride, options: .storageModeShared)
+            .orThrow(GaussianSplatRendererError.renderCommandCreateFailed)
 
         let needsDepthRange: Bool = {
             switch options.debugView {
@@ -355,9 +343,9 @@ public final class GaussianSplatRenderer {
             debugNearZ: max(debugNear, 1e-6),
             debugFarZ: max(debugFar, max(debugNear, 1e-6) + 1e-3)
         )
-        guard let rpBuf = device.makeBuffer(bytes: &rp, length: MemoryLayout<RenderParams>.stride, options: .storageModeShared) else {
-            throw GaussianSplatRendererError.renderCommandCreateFailed
-        }
+        let rpBuf = try device
+            .makeBuffer(bytes: &rp, length: MemoryLayout<RenderParams>.stride, options: .storageModeShared)
+            .orThrow(GaussianSplatRendererError.renderCommandCreateFailed)
 
         switch options.compositing {
         case .weightedOIT:
@@ -365,9 +353,7 @@ public final class GaussianSplatRenderer {
             let revealTex = try makeTex(.rgba16Float, hiW, hiH, [.renderTarget, .shaderRead])
             let auxTex = try makeTex(.rgba16Float, hiW, hiH, [.renderTarget, .shaderRead])
 
-            guard let cmd = commandQueue.makeCommandBuffer() else {
-                throw GaussianSplatRendererError.renderCommandCreateFailed
-            }
+            let cmd = try commandQueue.makeCommandBuffer().orThrow(GaussianSplatRendererError.renderCommandCreateFailed)
 
             // Pass 1: splats -> accum + revealage + aux.
             do {
@@ -387,9 +373,9 @@ public final class GaussianSplatRenderer {
                 rpd.colorAttachments[2].storeAction = .store
                 rpd.colorAttachments[2].clearColor = MTLClearColor(red: 0, green: 0, blue: 0, alpha: 0)
 
-                guard let enc = cmd.makeRenderCommandEncoder(descriptor: rpd) else {
-                    throw GaussianSplatRendererError.renderCommandCreateFailed
-                }
+                let enc = try cmd
+                    .makeRenderCommandEncoder(descriptor: rpd)
+                    .orThrow(GaussianSplatRendererError.renderCommandCreateFailed)
                 enc.setRenderPipelineState(splatOITPipeline)
                 enc.setVertexBuffer(camBuf, offset: 0, index: 0)
                 enc.setVertexBuffer(scene.means, offset: 0, index: 1)
@@ -410,9 +396,9 @@ public final class GaussianSplatRenderer {
                 rpd.colorAttachments[0].storeAction = .store
                 rpd.colorAttachments[0].clearColor = MTLClearColor(red: 0, green: 0, blue: 0, alpha: 1)
 
-                guard let enc = cmd.makeRenderCommandEncoder(descriptor: rpd) else {
-                    throw GaussianSplatRendererError.renderCommandCreateFailed
-                }
+                let enc = try cmd
+                    .makeRenderCommandEncoder(descriptor: rpd)
+                    .orThrow(GaussianSplatRendererError.renderCommandCreateFailed)
                 enc.setRenderPipelineState(compositeOITPipeline)
                 enc.setFragmentTexture(accumTex, index: 0)
                 enc.setFragmentTexture(revealTex, index: 1)
@@ -431,9 +417,9 @@ public final class GaussianSplatRenderer {
                 rpd.colorAttachments[0].storeAction = .store
                 rpd.colorAttachments[0].clearColor = MTLClearColor(red: 0, green: 0, blue: 0, alpha: 1)
 
-                guard let enc = cmd.makeRenderCommandEncoder(descriptor: rpd) else {
-                    throw GaussianSplatRendererError.renderCommandCreateFailed
-                }
+                let enc = try cmd
+                    .makeRenderCommandEncoder(descriptor: rpd)
+                    .orThrow(GaussianSplatRendererError.renderCommandCreateFailed)
                 enc.setRenderPipelineState(downsamplePipeline)
                 enc.setFragmentTexture(hiOutTex, index: 0)
                 enc.setFragmentSamplerState(linearSampler, index: 0)
@@ -459,20 +445,17 @@ public final class GaussianSplatRenderer {
                 binCount: UInt32(bins),
                 count: UInt32(scene.count)
             )
-            guard let binParamsBuf = device.makeBuffer(bytes: &binParams, length: MemoryLayout<DepthBinParams>.stride, options: .storageModeShared) else {
-                throw GaussianSplatRendererError.renderCommandCreateFailed
-            }
+            let binParamsBuf = try device
+                .makeBuffer(bytes: &binParams, length: MemoryLayout<DepthBinParams>.stride, options: .storageModeShared)
+                .orThrow(GaussianSplatRendererError.renderCommandCreateFailed)
 
-            guard let binCountsBuf = device.makeBuffer(length: bins * MemoryLayout<UInt32>.stride, options: .storageModeShared) else {
-                throw GaussianSplatRendererError.renderCommandCreateFailed
-            }
+            let binCountsBuf = try device
+                .makeBuffer(length: bins * MemoryLayout<UInt32>.stride, options: .storageModeShared)
+                .orThrow(GaussianSplatRendererError.renderCommandCreateFailed)
             memset(binCountsBuf.contents(), 0, bins * MemoryLayout<UInt32>.stride)
 
-            guard let cmdCount = commandQueue.makeCommandBuffer(),
-                  let enc = cmdCount.makeComputeCommandEncoder()
-            else {
-                throw GaussianSplatRendererError.renderCommandCreateFailed
-            }
+            let cmdCount = try commandQueue.makeCommandBuffer().orThrow(GaussianSplatRendererError.renderCommandCreateFailed)
+            let enc = try cmdCount.makeComputeCommandEncoder().orThrow(GaussianSplatRendererError.renderCommandCreateFailed)
             enc.setComputePipelineState(binCountPipeline)
             enc.setBuffer(binParamsBuf, offset: 0, index: 0)
             enc.setBuffer(scene.means, offset: 0, index: 1)
@@ -499,7 +482,7 @@ public final class GaussianSplatRenderer {
             if visibleCount == 0 {
                 let bytesPerRow = wOut * 4
                 let bytes = [UInt8](repeating: 0, count: bytesPerRow * hOut)
-                let colorSpace = CGColorSpace(name: CGColorSpace.sRGB) ?? CGColorSpaceCreateDeviceRGB()
+                let colorSpace = CGColorSpace(name: CGColorSpace.sRGB)!
                 let bitmapInfo = CGBitmapInfo.byteOrder32Little.union(.init(rawValue: CGImageAlphaInfo.premultipliedFirst.rawValue))
                 let provider = CGDataProvider(data: Data(bytes) as CFData)!
                 return CGImage(
@@ -518,24 +501,21 @@ public final class GaussianSplatRenderer {
             }
 
             // 2) Scatter indices (GPU), then render+composite.
-            guard let cursorBuf = device.makeBuffer(length: bins * MemoryLayout<UInt32>.stride, options: .storageModeShared),
-                  let sortedBuf = device.makeBuffer(length: visibleCount * MemoryLayout<UInt32>.stride, options: .storageModeShared)
-            else {
-                throw GaussianSplatRendererError.renderCommandCreateFailed
-            }
+            let cursorBuf = try device
+                .makeBuffer(length: bins * MemoryLayout<UInt32>.stride, options: .storageModeShared)
+                .orThrow(GaussianSplatRendererError.renderCommandCreateFailed)
+            let sortedBuf = try device
+                .makeBuffer(length: visibleCount * MemoryLayout<UInt32>.stride, options: .storageModeShared)
+                .orThrow(GaussianSplatRendererError.renderCommandCreateFailed)
             offsets.withUnsafeBytes { src in
                 _ = memcpy(cursorBuf.contents(), src.baseAddress!, bins * MemoryLayout<UInt32>.stride)
             }
 
-            guard let cmd = commandQueue.makeCommandBuffer() else {
-                throw GaussianSplatRendererError.renderCommandCreateFailed
-            }
+            let cmd = try commandQueue.makeCommandBuffer().orThrow(GaussianSplatRendererError.renderCommandCreateFailed)
 
             // Scatter pass.
             do {
-                guard let cenc = cmd.makeComputeCommandEncoder() else {
-                    throw GaussianSplatRendererError.renderCommandCreateFailed
-                }
+                let cenc = try cmd.makeComputeCommandEncoder().orThrow(GaussianSplatRendererError.renderCommandCreateFailed)
                 cenc.setComputePipelineState(binScatterPipeline)
                 cenc.setBuffer(binParamsBuf, offset: 0, index: 0)
                 cenc.setBuffer(scene.means, offset: 0, index: 1)
@@ -562,9 +542,9 @@ public final class GaussianSplatRenderer {
                 rpd.colorAttachments[1].storeAction = .store
                 rpd.colorAttachments[1].clearColor = MTLClearColor(red: 0, green: 0, blue: 0, alpha: 0)
 
-                guard let renc = cmd.makeRenderCommandEncoder(descriptor: rpd) else {
-                    throw GaussianSplatRendererError.renderCommandCreateFailed
-                }
+                let renc = try cmd
+                    .makeRenderCommandEncoder(descriptor: rpd)
+                    .orThrow(GaussianSplatRendererError.renderCommandCreateFailed)
                 renc.setRenderPipelineState(splatAlphaPipeline)
                 renc.setVertexBuffer(camBuf, offset: 0, index: 0)
                 renc.setVertexBuffer(scene.means, offset: 0, index: 1)
@@ -586,9 +566,9 @@ public final class GaussianSplatRenderer {
                 rpd.colorAttachments[0].storeAction = .store
                 rpd.colorAttachments[0].clearColor = MTLClearColor(red: 0, green: 0, blue: 0, alpha: 1)
 
-                guard let renc = cmd.makeRenderCommandEncoder(descriptor: rpd) else {
-                    throw GaussianSplatRendererError.renderCommandCreateFailed
-                }
+                let renc = try cmd
+                    .makeRenderCommandEncoder(descriptor: rpd)
+                    .orThrow(GaussianSplatRendererError.renderCommandCreateFailed)
                 renc.setRenderPipelineState(compositeAlphaPipeline)
                 renc.setFragmentTexture(colorTex, index: 0)
                 renc.setFragmentTexture(auxTex, index: 1)
@@ -606,9 +586,9 @@ public final class GaussianSplatRenderer {
                 rpd.colorAttachments[0].storeAction = .store
                 rpd.colorAttachments[0].clearColor = MTLClearColor(red: 0, green: 0, blue: 0, alpha: 1)
 
-                guard let renc = cmd.makeRenderCommandEncoder(descriptor: rpd) else {
-                    throw GaussianSplatRendererError.renderCommandCreateFailed
-                }
+                let renc = try cmd
+                    .makeRenderCommandEncoder(descriptor: rpd)
+                    .orThrow(GaussianSplatRendererError.renderCommandCreateFailed)
                 renc.setRenderPipelineState(downsamplePipeline)
                 renc.setFragmentTexture(hiOutTex, index: 0)
                 renc.setFragmentSamplerState(linearSampler, index: 0)
@@ -625,7 +605,7 @@ public final class GaussianSplatRenderer {
         var bytes = [UInt8](repeating: 0, count: bytesPerRow * hOut)
         outTex.getBytes(&bytes, bytesPerRow: bytesPerRow, from: MTLRegionMake2D(0, 0, wOut, hOut), mipmapLevel: 0)
 
-        let colorSpace = CGColorSpace(name: CGColorSpace.sRGB) ?? CGColorSpaceCreateDeviceRGB()
+        let colorSpace = CGColorSpace(name: CGColorSpace.sRGB)!
         let bitmapInfo = CGBitmapInfo.byteOrder32Little.union(.init(rawValue: CGImageAlphaInfo.premultipliedFirst.rawValue))
         let provider = CGDataProvider(data: Data(bytes) as CFData)!
         return CGImage(
@@ -755,7 +735,6 @@ public final class GaussianSplatRenderer {
 
         @inline(__always)
         func median(_ arr: [Float]) -> Float {
-            if arr.count == 1 { return arr[0] }
             let mid = arr.count / 2
             if arr.count % 2 == 1 { return arr[mid] }
             return 0.5 * (arr[mid - 1] + arr[mid])
