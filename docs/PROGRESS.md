@@ -222,3 +222,6 @@ This log is append-only. Every entry includes an ISO-8601 timestamp with timezon
 - Refactored Metal + video plumbing for deterministic testability:
   - `MP4VideoWriter.finish(...)` is now idempotent-safe (prevents double `finishWriting` crashes) and keeps explicit `finishTimeout/finishFailed` behavior.
   - Removed “never happens” branches that were otherwise un-coverable (e.g., embedded metallib base64 decode guard).
+
+## 2026-01-10T07:19:21-06:00
+- Updated `README.md` status notes and removed stale WIP tags from Makefile targets.

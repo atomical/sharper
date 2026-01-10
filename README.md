@@ -14,6 +14,13 @@ This repo converts Apple’s SHARP model (`apple/ml-sharp`) to a CoreML `.mlpack
 - Python **3.11** (`brew install python@3.11`)
 - Xcode (for Swift + Metal work) — version will be pinned once Swift targets land
 
+## Status Notes
+
+- macOS path is validated end-to-end (`make validate`, `make validate-swift`, `make demo`).
+- iOS runtime verification/profiling is deferred; `make ios-build` is a build-only smoke check.
+- visionOS is best-effort and requires the simulator runtime installed via Xcode.
+- FP16 model is best-effort; parity diverges vs the FP32 reference.
+
 ## Quickstart (Phase 0)
 
 1) Create venv + install deps + fetch pinned `ml-sharp`:
@@ -49,10 +56,10 @@ Notes:
 
 - `make fixtures`: generate inputs under `artifacts/fixtures/inputs/`
 - `make ref`: PyTorch reference runner → `raw_outputs.npz` + `scene.ply`
-- `make export`: export a CoreML-friendly Torch graph (WIP)
-- `make coreml`: convert exported graph → `artifacts/Sharp.mlpackage` (WIP)
+- `make export`: export a CoreML-friendly Torch graph
+- `make coreml`: convert exported graph → `artifacts/Sharp.mlpackage`
 - `make coreml-fp16`: convert exported graph → `artifacts/Sharp_fp16.mlpackage`
-- `make validate`: parity suite (PyTorch vs CoreML) (WIP)
+- `make validate`: parity suite (PyTorch vs CoreML)
 - `make validate-fp16`: best-effort parity report for FP16 model (expected to diverge from FP32 ref)
 - `make validate-swift`: parity suite (Swift `scene.ply` vs PyTorch reference)
 - `make demo`: Swift demo CLI (image → PLY → frames + mp4)
