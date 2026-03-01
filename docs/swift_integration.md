@@ -352,7 +352,7 @@ Core controls:
 
 - `compositing`:
   - `.weightedOIT` (default): fast + deterministic, but approximate.
-  - `.depthBinnedAlpha(binCount:)`: coarse back-to-front compositing; reduces OIT halos but costs more GPU work and may be slightly nondeterministic (atomics).
+  - `.depthBinnedAlpha(binCount:)`: coarse back-to-front compositing; reduces OIT halos but costs more GPU work and may be slightly nondeterministic (atomics). On some scenes this can introduce temporal grain/shimmer.
 - `renderScale` (SSAA): render at `scale * WxH` then downsample. Typical values: `1.0`, `1.5`, `2.0`.
 
 Scene/camera controls:
@@ -383,6 +383,22 @@ Visualization-only normalization:
   - `.unitRadius` scales the scene so a robust radius becomes ~1.
 
 These are for rendering/framing only; they do not change the `.ply` you export.
+
+Preset tradeoff notes:
+
+- CLI preset `--quality-preset less_fog` currently maps to:
+  - `compositing = bins:256`
+  - `opacityThreshold = 0.01`
+  - `nearClipZ = 0.05`
+  - `renderScale = 2.0`
+  - `toneMap = aces`
+- This usually reduces fog/halos, but if you see grain/shimmer, prefer a smoother recipe:
+  - `compositing = oit`
+  - `opacityThreshold = 0.005`
+  - `nearClipZ = 0.04`
+  - `renderScale = 1.5`
+  - `toneMap = aces`
+  - `lowPassEps2D = 0.15`
 
 ## 6) MP4 export
 

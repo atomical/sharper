@@ -22,6 +22,19 @@ private enum QuickDemoError: Error {
     case metalBufferCreateFailed
 }
 
+private enum RenderQualityPreset {
+    case lessFog
+
+    init?(rawValue: String) {
+        switch rawValue {
+        case "less_fog", "less-fog":
+            self = .lessFog
+        default:
+            return nil
+        }
+    }
+}
+
 private struct Args {
     var modelURL: URL
     var imageURL: URL
@@ -53,6 +66,17 @@ private struct Args {
     var normalizationScale: GaussianSplatSceneScale = .none
 
     var lookAtMode: MLSharpTrajectoryParams.LookAtMode = .point
+}
+
+private func applyQualityPreset(_ preset: RenderQualityPreset, to args: inout Args) {
+    switch preset {
+    case .lessFog:
+        args.compositing = .depthBinnedAlpha(binCount: 256)
+        args.opacityThreshold = 0.01
+        args.nearClipZ = 0.05
+        args.renderScale = 2.0
+        args.toneMap = .aces
+    }
 }
 
 private func fileExists(_ url: URL) -> Bool {
@@ -130,6 +154,12 @@ private func parseArgs() throws -> Args {
             } else {
                 throw QuickDemoError.invalidSize("Unknown --compositing: \(v)")
             }
+        case "--quality-preset":
+            guard let v = argv.first, let preset = RenderQualityPreset(rawValue: String(v)) else {
+                throw QuickDemoError.invalidSize("--quality-preset")
+            }
+            argv = argv.dropFirst()
+            applyQualityPreset(preset, to: &args)
         case "--tonemap":
             guard let v = argv.first, let tm = GaussianSplatToneMap(rawValue: String(v)) else { throw QuickDemoError.invalidSize("--tonemap") }
             argv = argv.dropFirst()
@@ -234,6 +264,7 @@ private func parseArgs() throws -> Args {
                                                   [--frames N] [--size WxH] [--mlsharp-size] [--fps N]
                                                   [--compute-units all|cpu_only|cpu_and_gpu|cpu_and_ne]
                                                   [--render-scale S] [--compositing oit|bins[:N]]
+                                                  [--quality-preset less_fog]
                                                   [--tonemap none|reinhard|aces] [--exposure-ev EV] [--saturation S] [--contrast C]
                                                   [--debug none|alpha|depth|disparity|radius]
                                                   [--near-clip Z] [--opacity-threshold A] [--lowpass-eps2d E] [--min-radius PX] [--max-radius PX]

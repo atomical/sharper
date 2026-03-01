@@ -73,12 +73,36 @@ struct Args {
     var lookAtMode: MLSharpTrajectoryParams.LookAtMode = .point
 }
 
+private enum RenderQualityPreset {
+    case lessFog
+
+    init?(rawValue: String) {
+        switch rawValue {
+        case "less_fog", "less-fog":
+            self = .lessFog
+        default:
+            return nil
+        }
+    }
+}
+
+private func applyQualityPreset(_ preset: RenderQualityPreset, to args: inout Args) {
+    switch preset {
+    case .lessFog:
+        args.compositing = .depthBinnedAlpha(binCount: 256)
+        args.opacityThreshold = 0.01
+        args.nearClipZ = 0.05
+        args.renderScale = 2.0
+        args.toneMap = .aces
+    }
+}
+
 func parseArgs() -> Args? {
     var argv = CommandLine.arguments.dropFirst()
     guard argv.count >= 2 else {
         print("Usage:")
         print("  SharpDemoApp [predict] <image_path> <out_dir> [--model <mlpackage>] [--compute-units all|cpu_only|cpu_and_gpu|cpu_and_ne] [--frames N] [--size WxH] [--mlsharp-size] [--video out.mp4] [--fps N] [--no-render]")
-        print("             [--render-scale S] [--compositing oit|bins[:N]] [--tonemap none|reinhard|aces] [--exposure-ev EV] [--saturation S] [--contrast C]")
+        print("             [--render-scale S] [--compositing oit|bins[:N]] [--quality-preset less_fog] [--tonemap none|reinhard|aces] [--exposure-ev EV] [--saturation S] [--contrast C]")
         print("             [--debug none|alpha|depth|disparity|radius] [--near-clip Z] [--opacity-threshold A] [--lowpass-eps2d E] [--min-radius PX] [--max-radius PX]")
         print("             [--normalize none|recenter_xy|recenter_xyz] [--normalize-scale none|unit_radius] [--lookat point|ahead] [--bench-out bench.json] [--iters N]")
         print("  SharpDemoApp render <scene.ply> <out_dir> [--frames N] [--size WxH] [--mlsharp-size] [--video out.mp4] [--fps N]")
@@ -141,6 +165,13 @@ func parseArgs() -> Args? {
                 print("Unknown --compositing: \(v)")
                 return nil
             }
+        case "--quality-preset":
+            guard let v = argv.first, let preset = RenderQualityPreset(rawValue: String(v)) else {
+                print("Unknown --quality-preset")
+                return nil
+            }
+            argv = argv.dropFirst()
+            applyQualityPreset(preset, to: &args)
         case "--tonemap":
             guard let v = argv.first, let tm = GaussianSplatToneMap(rawValue: String(v)) else { return nil }
             argv = argv.dropFirst()
