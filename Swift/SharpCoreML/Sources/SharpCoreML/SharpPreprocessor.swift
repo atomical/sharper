@@ -1,4 +1,5 @@
 import CoreML
+import CoreImage
 import CoreGraphics
 import Foundation
 import ImageIO
@@ -12,6 +13,7 @@ public enum SharpPreprocessError: Error {
 
 public struct SharpPreprocessor {
     public static let internalResolution: Int = 1536
+    private static let orientationContext = CIContext(options: [.cacheIntermediates: false])
 
     public static func loadCGImage(from url: URL, autoRotate: Bool = true) throws -> CGImage {
         guard let source = CGImageSourceCreateWithURL(url as CFURL, nil) else {
@@ -32,20 +34,9 @@ public struct SharpPreprocessor {
             orientationRaw = 1
         }
 
-        switch orientationRaw {
-        case 1:
-            return cgImage
-        case 3:
-            return try rotated(cgImage: cgImage, degrees: 180)
-        case 6:
-            // EXIF 6: rotate 90° clockwise.
-            return try rotated(cgImage: cgImage, degrees: -90)
-        case 8:
-            // EXIF 8: rotate 90° counter-clockwise.
-            return try rotated(cgImage: cgImage, degrees: 90)
-        default:
-            return cgImage
-        }
+        guard orientationRaw != 1 else { return cgImage }
+        guard (1...8).contains(Int(orientationRaw)) else { return cgImage }
+        return try oriented(cgImage: cgImage, exifOrientation: orientationRaw)
     }
 
     public static func loadMetadata(from url: URL, imageWidth: Int, imageHeight: Int) -> SharpInputMetadata {
@@ -229,60 +220,10 @@ public struct SharpPreprocessor {
         return (image: image, disparityFactor: disparity)
     }
 
-    private static func rotated(cgImage: CGImage, degrees: Int) throws -> CGImage {
-        let w = cgImage.width
-        let h = cgImage.height
-
-        let newW: Int
-        let newH: Int
-        switch degrees {
-        case 180, -180:
-            newW = w
-            newH = h
-        case 90, -90:
-            newW = h
-            newH = w
-        default:
-            return cgImage
-        }
-
-        let bytesPerRow = newW * 4
-        let colorSpace = CGColorSpace(name: CGColorSpace.sRGB) ?? CGColorSpaceCreateDeviceRGB()
-        let bitmapInfo = CGBitmapInfo.byteOrder32Little.rawValue | CGImageAlphaInfo.premultipliedFirst.rawValue
-        guard let ctx = CGContext(
-            data: nil,
-            width: newW,
-            height: newH,
-            bitsPerComponent: 8,
-            bytesPerRow: bytesPerRow,
-            space: colorSpace,
-            bitmapInfo: bitmapInfo
-        ) else {
-            throw SharpPreprocessError.orientationTransformFailed
-        }
-
-        ctx.interpolationQuality = .none
-        ctx.setAllowsAntialiasing(false)
-        ctx.setShouldAntialias(false)
-
-        switch degrees {
-        case 180, -180:
-            ctx.translateBy(x: CGFloat(newW), y: CGFloat(newH))
-            ctx.rotate(by: .pi)
-        case 90:
-            // 90° CCW.
-            ctx.translateBy(x: 0, y: CGFloat(newH))
-            ctx.rotate(by: -.pi / 2.0)
-        case -90:
-            // 90° CW.
-            ctx.translateBy(x: CGFloat(newW), y: 0)
-            ctx.rotate(by: .pi / 2.0)
-        default:
-            break
-        }
-
-        ctx.draw(cgImage, in: CGRect(x: 0, y: 0, width: CGFloat(w), height: CGFloat(h)))
-        guard let out = ctx.makeImage() else {
+    private static func oriented(cgImage: CGImage, exifOrientation: UInt32) throws -> CGImage {
+        let ciImage = CIImage(cgImage: cgImage).oriented(forExifOrientation: Int32(exifOrientation))
+        let extent = ciImage.extent.integral
+        guard let out = orientationContext.createCGImage(ciImage, from: extent) else {
             throw SharpPreprocessError.orientationTransformFailed
         }
         return out
